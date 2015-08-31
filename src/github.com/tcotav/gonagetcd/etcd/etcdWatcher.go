@@ -80,9 +80,9 @@ func InitDataMap(client *etcd.Client) {
 
 // DumpServices is a utility method that dumps all contents of etcd that match
 // a specified base string
-func DumpServices(client *etcd.Client) {
-	base_str := "/site"
-	resp := ClientGet(client, base_str)
+func DumpServices(client *etcd.Client, baseStr string) {
+	//baseStr := "/site"
+	resp := ClientGet(client, baseStr)
 	// get the list of host type
 	for _, n := range resp.Node.Nodes {
 		resp1 := ClientGet(client, n.Key)
@@ -92,6 +92,12 @@ func DumpServices(client *etcd.Client) {
 				log.Printf("%s: %s\n", n2.Key, n2.Value)
 			}
 		}
+	}
+}
+
+func DumpMap() {
+	for k, v := range hostMap {
+		log.Printf("%s: %+v\n", k, v)
 	}
 }
 
