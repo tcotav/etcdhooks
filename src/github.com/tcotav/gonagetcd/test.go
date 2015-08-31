@@ -8,7 +8,8 @@ Script that watched etcd and rewrites configuration files on change in etcd
 import (
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/tcotav/gonagetcd/etcd"
-	//	"github.com/tcotav/gonagetcd/tcotav/nagios"
+	"github.com/tcotav/gonagetcd/hostdata"
+	"github.com/tcotav/gonagetcd/tcotav/nagios"
 	"log"
 )
 
