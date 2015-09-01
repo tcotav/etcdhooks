@@ -8,23 +8,33 @@ Script that watched etcd and rewrites configuration files on change in etcd
 import (
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/tcotav/gonagetcd/etcd"
-	//	"github.com/tcotav/gonagetcd/nagios"
+	"github.com/tcotav/gonagetcd/nagios"
 	"log"
 )
+
+// think we want to dump a lot of this into a config
+// stuff like the etcd info
+//
+var nagios_host_file = "/tmp/hosts.cfg"
+var nagios_group_file = "/tmp/groups.cfg"
 
 // updateHost wrapper containing async function calls to update the internal map
 // as well as the config files
 func updateHost(k string, v string) {
 	go etcdWatcher.UpdateMap(k, v)
 	// run the updateNagios command
-	go nagios.GenerateFiles(etcdWatcher.Map(), k, v)
+	regenFiles()
+}
+
+func regenFiles() {
+	go nagios.GenerateFiles(etcdWatcher.Map(), nagios_host_file, nagios_group_file)
 }
 
 func removeHost(k string) {
 	go etcdWatcher.DeleteFromMap(k)
 	// remove from map
 	// run the updateNagios command
-	go nagios.GenerateFiles(etcdWatcher.Map(), k, v)
+	regenFiles()
 	log.Printf("in delete for key:%s\n", k)
 }
 
@@ -33,6 +43,8 @@ func main() {
 	etcdWatcher.InitDataMap(client)
 	log.Println("Dumping map contents for verification")
 	etcdWatcher.DumpMap()
+	log.Println("Generating initial config files")
+	regenFiles()
 	watchChan := make(chan *etcd.Response)
 	go client.Watch("/site/", 0, true, watchChan, nil)
 	log.Println("Waiting for an update...")

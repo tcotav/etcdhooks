@@ -2,7 +2,6 @@ package nagios
 
 import (
 	"fmt"
-	"github.com/tcotav/gonagetcd/hostdata"
 	"log"
 	"os"
 	"strings"
