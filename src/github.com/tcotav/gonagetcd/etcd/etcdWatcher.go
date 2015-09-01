@@ -8,23 +8,14 @@ Script that watched etcd and rewrites configuration files on change in etcd
 import (
 	"fmt"
 	"github.com/coreos/go-etcd/etcd"
-	"github.com/tcotav/gonagetcd/hostdata"
 	"log"
 	"strconv"
 	"strings"
 )
 
-type HostData struct {
-	Name, IP string
-	Status   int
-}
-type KVPair struct {
-	Key, Value string
-}
+var hostMap = make(map[string]int)
 
-var hostMap = make(map[string]*HostData)
-
-func Map() map[string]*HostData {
+func Map() map[string]int {
 	return hostMap
 }
 
@@ -37,6 +28,10 @@ func ClientGet(client *etcd.Client, url string) *etcd.Response {
 	return resp
 }
 
+func DeleteFromMap(k string) {
+	delete(hostMap, k)
+}
+
 // InitDataMap initializes a local map of hostnames and their respective metadata as
 // struct: ip, status, name
 func InitDataMap(client *etcd.Client) {
@@ -46,35 +41,17 @@ func InitDataMap(client *etcd.Client) {
 	for _, n := range resp.Node.Nodes {
 		resp1 := ClientGet(client, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
-			resp2 := ClientGet(client, n1.Key)
-			for _, n2 := range resp2.Node.Nodes {
-				// key format is /site/web/001 -- we want site-web-001
-				hostName := strings.Replace(n1.Key[1:], "/", "-", -1)
-				log.Print(hostName)
-				if _, ok := hostMap[hostName]; !ok {
-					var m = new(HostData)
-					m.Name = hostName
-					hostMap[hostName] = m
-					log.Printf("Creating new entry for %s", hostName)
-				}
-				// key in format:  /site/extapi/500/status
-				//log.Printf("n2.Key is %s", n2.Key)
-				// want just the last part of url
-				urlArray := strings.Split(n2.Key, "/")
-				switch urlArray[len(urlArray)-1] {
-				case "ip":
-					hostMap[hostName].IP = n2.Value
-				case "status":
-					i, err := strconv.Atoi(n2.Value)
-					if err != nil {
-						// handle error
-						log.Fatal(err)
-					}
-					hostMap[hostName].Status = i
-				default:
-					log.Fatal("Unknown key: " + n2.Key)
-				}
+			// key format is /site/web/001 -- we want site-web-001
+			hostName := strings.Replace(n1.Key[1:], "/", "-", -1)
+			log.Printf("n1.Key is %s", n1.Key)
+			log.Printf("n1.Value is %s", n1.Value)
+			// want just the last part of url
+			i, err := strconv.Atoi(n1.Value)
+			if err != nil {
+				// handle error
+				log.Fatal(err)
 			}
+			hostMap[hostName] = i
 		}
 	}
 }
@@ -88,10 +65,7 @@ func DumpServices(client *etcd.Client, baseStr string) {
 	for _, n := range resp.Node.Nodes {
 		resp1 := ClientGet(client, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
-			resp2 := ClientGet(client, n1.Key)
-			for _, n2 := range resp2.Node.Nodes {
-				log.Printf("%s: %s\n", n2.Key, n2.Value)
-			}
+			log.Printf("%s: %s\n", n1.Key, n1.Value)
 		}
 	}
 }
@@ -108,20 +82,12 @@ func UpdateMap(k string, v string) {
 	keyArray := strings.Split(k[1:], "/")
 	hostName := fmt.Sprintf("%s-%s-%s", keyArray[0], keyArray[1], keyArray[2])
 	log.Printf("UpdateMap hostname: %s", hostName)
-	param := keyArray[3]
-	switch param {
-	case "ip":
-		hostMap[hostName].IP = v
-	case "status":
-		i, err := strconv.Atoi(v)
-		if err != nil {
-			// handle error
-			log.Fatal(err)
-		}
-		hostMap[hostName].Status = i
-	default:
-		log.Fatal("Unknown key: " + k)
+	i, err := strconv.Atoi(v)
+	if err != nil {
+		// handle error
+		log.Fatal(err)
 	}
+	hostMap[hostName] = i
 }
 
 func main() {
@@ -140,10 +106,10 @@ func main() {
 		case r := <-watchChan:
 			// do something with it here
 			log.Printf("Updated KV: %s: %s\n", r.Node.Key, r.Node.Value)
-			kvp := new(KVPair)
+			/*kvp := new(KVPair)
 			kvp.Key = r.Node.Key
 			kvp.Value = r.Node.Value
-			go UpdateMap(kvp.Key, kvp.Value)
+			go UpdateMap(kvp.Key, kvp.Value)*/
 		}
 	}
 	// we don't really care what changed in this case so...

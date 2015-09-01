@@ -8,15 +8,24 @@ Script that watched etcd and rewrites configuration files on change in etcd
 import (
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/tcotav/gonagetcd/etcd"
-	"github.com/tcotav/gonagetcd/hostdata"
-	"github.com/tcotav/gonagetcd/tcotav/nagios"
+	//	"github.com/tcotav/gonagetcd/nagios"
 	"log"
 )
 
-// updateMap wrapper containing async function calls to update the internal map
+// updateHost wrapper containing async function calls to update the internal map
 // as well as the config files
-func updateMap(k string, v string) {
+func updateHost(k string, v string) {
 	go etcdWatcher.UpdateMap(k, v)
+	// run the updateNagios command
+	go nagios.GenerateFiles(etcdWatcher.Map(), k, v)
+}
+
+func removeHost(k string) {
+	go etcdWatcher.DeleteFromMap(k)
+	// remove from map
+	// run the updateNagios command
+	go nagios.GenerateFiles(etcdWatcher.Map(), k, v)
+	log.Printf("in delete for key:%s\n", k)
 }
 
 func main() {
@@ -31,11 +40,18 @@ func main() {
 		select {
 		case r := <-watchChan:
 			// do something with it here
+			log.Printf("Changed KV: %+v\n", r)
 			log.Printf("Updated KV: %s: %s\n", r.Node.Key, r.Node.Value)
-			kvp := new(etcdWatcher.KVPair)
-			kvp.Key = r.Node.Key
-			kvp.Value = r.Node.Value
-			go updateMap(kvp.Key, kvp.Value)
+			action := r.Action
+			k := r.Node.Key
+			v := r.Node.Value
+			switch action {
+			case "delete":
+				log.Printf("delete of key: %s", k)
+				go removeHost(k)
+			case "set":
+				go updateHost(k, v)
+			}
 		}
 	}
 	// we don't really care what changed in this case so...

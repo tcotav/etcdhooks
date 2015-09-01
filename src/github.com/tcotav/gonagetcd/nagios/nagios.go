@@ -1,4 +1,4 @@
-package main
+package nagios
 
 import (
 	"fmt"
@@ -33,7 +33,7 @@ func extractGroup(s string) string {
 	return slist[1]
 }
 
-func GenerateFiles(hdMap map[string]*HostData, hostPath string, groupPath string) {
+func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 	f, err := os.Create(hostPath)
 	if err != nil {
 		log.Fatal(err)

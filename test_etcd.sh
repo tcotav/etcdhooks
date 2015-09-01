@@ -11,8 +11,8 @@
 #curl -L http://127.0.0.1:4001/v2/keys/site/db/500/status -XPUT -d value=1
 #
 
-curl -L http://127.0.0.1:4001/v2/keys/site/web/503/ip -XPUT -d value=10.0.1.3
-sleep 5
-curl -L http://127.0.0.1:4001/v2/keys/site/web/503/status -XPUT -d value=0
+curl -L http://127.0.0.1:4001/v2/keys/site/web/503 -XPUT -d value=0
+curl http://127.0.0.1:4001/v2/keys/site/web/503
 sleep 5
 curl -L http://127.0.0.1:4001/v2/keys/site/web/503 -XDELETE
+curl http://127.0.0.1:4001/v2/keys/site/web/503
