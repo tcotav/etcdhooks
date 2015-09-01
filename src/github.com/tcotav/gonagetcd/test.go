@@ -7,6 +7,7 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"github.com/coreos/go-etcd/etcd"
+	"github.com/tcotav/gonagetcd/config"
 	"github.com/tcotav/gonagetcd/etcd"
 	"github.com/tcotav/gonagetcd/nagios"
 	"log"
@@ -39,6 +40,9 @@ func removeHost(k string) {
 }
 
 func main() {
+	config := config.ParseConfig("daemon.cfg")
+	nagios_host_file = config["nagios_host_file"]
+	nagios_group_file = config["nagios_groups_file"]
 	client := etcd.NewClient([]string{"http://127.0.0.1:4001"})
 	etcdWatcher.InitDataMap(client)
 	log.Println("Dumping map contents for verification")
