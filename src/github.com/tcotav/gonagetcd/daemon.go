@@ -28,6 +28,8 @@ func updateHost(k string, v string) {
 	regenFiles()
 }
 
+// regenFiles utility function that calls ALL of the file regen methods.
+// Currently only handles nagios
 func regenFiles() {
 	go nagios.GenerateFiles(etcdWatcher.Map(), nagios_host_file, nagios_group_file)
 }

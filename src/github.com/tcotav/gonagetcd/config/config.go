@@ -7,10 +7,8 @@ import (
 	"strings"
 )
 
-// think we want to dump a lot of this into a config
-// stuff like the etcd info
-//
-
+// ParseConfig parse a simple K=V pair based config file and return
+// a map equivalent.
 func ParseConfig(fileName string) map[string]string {
 	file, err := os.Open(fileName)
 	if err != nil {

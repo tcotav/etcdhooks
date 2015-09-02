@@ -15,6 +15,7 @@ import (
 
 var hostMap = make(map[string]int)
 
+// Map returns the hostmap
 func Map() map[string]int {
 	return hostMap
 }
@@ -70,6 +71,7 @@ func DumpServices(client *etcd.Client, baseStr string) {
 	}
 }
 
+// DumpMap walks the host map and dumps out key-value pairs
 func DumpMap() {
 	for k, v := range hostMap {
 		log.Printf("%s: %+v\n", k, v)

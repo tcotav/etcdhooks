@@ -32,6 +32,8 @@ func extractGroup(s string) string {
 	return slist[1]
 }
 
+// GenerateFiles takes the source host map and writes out a host and group nagios config file
+// to the path passed to the function.
 func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 	f, err := os.Create(hostPath)
 	if err != nil {
