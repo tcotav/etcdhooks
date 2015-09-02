@@ -11,6 +11,7 @@ import (
 	"github.com/tcotav/gonagetcd/etcd"
 	"github.com/tcotav/gonagetcd/nagios"
 	"log"
+	"strings"
 )
 
 // think we want to dump a lot of this into a config
@@ -42,7 +43,9 @@ func main() {
 	config := config.ParseConfig("daemon.cfg")
 	nagios_host_file = config["nagios_host_file"]
 	nagios_group_file = config["nagios_groups_file"]
-	client := etcd.NewClient([]string{"http://127.0.0.1:4001"})
+	// expect this to be csv or single entry
+	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
+	client := etcd.NewClient(etcd_server_list)
 	etcdWatcher.InitDataMap(client)
 	//log.Println("Dumping map contents for verification")
 	//etcdWatcher.DumpMap()
