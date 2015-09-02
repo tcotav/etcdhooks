@@ -36,7 +36,6 @@ func removeHost(k string) {
 	// remove from map
 	// run the updateNagios command
 	regenFiles()
-	log.Printf("in delete for key:%s\n", k)
 }
 
 func main() {
@@ -45,8 +44,8 @@ func main() {
 	nagios_group_file = config["nagios_groups_file"]
 	client := etcd.NewClient([]string{"http://127.0.0.1:4001"})
 	etcdWatcher.InitDataMap(client)
-	log.Println("Dumping map contents for verification")
-	etcdWatcher.DumpMap()
+	//log.Println("Dumping map contents for verification")
+	//etcdWatcher.DumpMap()
 	log.Println("Generating initial config files")
 	regenFiles()
 	watchChan := make(chan *etcd.Response)
@@ -56,8 +55,6 @@ func main() {
 		select {
 		case r := <-watchChan:
 			// do something with it here
-			log.Printf("Changed KV: %+v\n", r)
-			log.Printf("Updated KV: %s: %s\n", r.Node.Key, r.Node.Value)
 			action := r.Action
 			k := r.Node.Key
 			v := r.Node.Value
@@ -66,6 +63,7 @@ func main() {
 				log.Printf("delete of key: %s", k)
 				go removeHost(k)
 			case "set":
+				log.Printf("update of key: %s, value: %s", k, v)
 				go updateHost(k, v)
 			}
 		}

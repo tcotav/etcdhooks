@@ -30,7 +30,6 @@ func ParseConfig(fileName string) map[string]string {
 			slist := strings.Split(s, "=")
 			// set map[k] = v
 			if len(slist) == 2 {
-				log.Printf("%s", slist[0])
 				config[slist[0]] = slist[1]
 			}
 		}

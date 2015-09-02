@@ -43,8 +43,8 @@ func InitDataMap(client *etcd.Client) {
 		for _, n1 := range resp1.Node.Nodes {
 			// key format is /site/web/001 -- we want site-web-001
 			hostName := strings.Replace(n1.Key[1:], "/", "-", -1)
-			log.Printf("n1.Key is %s", n1.Key)
-			log.Printf("n1.Value is %s", n1.Value)
+			//log.Printf("n1.Key is %s", n1.Key)
+			//log.Printf("n1.Value is %s", n1.Value)
 			// want just the last part of url
 			i, err := strconv.Atoi(n1.Value)
 			if err != nil {
@@ -81,7 +81,7 @@ func UpdateMap(k string, v string) {
 	// format of key is /site/web/502/status
 	keyArray := strings.Split(k[1:], "/")
 	hostName := fmt.Sprintf("%s-%s-%s", keyArray[0], keyArray[1], keyArray[2])
-	log.Printf("UpdateMap hostname: %s", hostName)
+	//log.Printf("UpdateMap hostname: %s", hostName)
 	i, err := strconv.Atoi(v)
 	if err != nil {
 		// handle error

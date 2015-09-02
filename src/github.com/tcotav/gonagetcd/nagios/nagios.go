@@ -48,11 +48,9 @@ func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 		f.WriteString(fmt.Sprintf(HostDef, host, host, host))
 
 		group := extractGroup(host)
-		fmt.Printf("%s\n", group)
 		hostGroups[group] = append(hostGroups[group], host)
 	}
 	// at the end, write out the group file using the group list
-	log.Printf("%v", hostGroups)
 
 	f1, err := os.Create(groupPath)
 	if err != nil {
@@ -63,7 +61,6 @@ func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 	// now print out the group file
 	for k := range hostGroups {
 		sHosts := strings.Join(hostGroups[k], ",")
-		log.Printf("group: %s, hosts: %s\n", k, sHosts)
 		f1.WriteString(fmt.Sprintf(GroupDef, k, k, sHosts))
 	}
 }
