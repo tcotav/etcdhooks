@@ -7,9 +7,9 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"github.com/coreos/go-etcd/etcd"
-	"github.com/tcotav/gonagetcd/config"
-	"github.com/tcotav/gonagetcd/etcd"
-	"github.com/tcotav/gonagetcd/nagios"
+	"github.com/tcotav/etcdhooks/config"
+	"github.com/tcotav/etcdhooks/etcd"
+	"github.com/tcotav/etcdhooks/nagios"
 	"log"
 	"strings"
 )
