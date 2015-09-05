@@ -1,13 +1,11 @@
-package main
+package webservice
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/coreos/go-etcd/etcd"
-	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
+	"log"
 	"net/http"
-	"strings"
 )
 
 func dump(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +19,14 @@ func dump(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-func main() {
+func StartWebService(listenPort string) {
+	http.HandleFunc("/", dump)
+
+	log.Printf("Starting webservice on port: %s", listenPort)
+	http.ListenAndServe(fmt.Sprintf(":%s", listenPort), nil)
+}
+
+/*func main() {
 	config := config.ParseConfig("daemon.cfg")
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
@@ -31,4 +36,4 @@ func main() {
 	listenPort := config["web_listen_port"]
 	http.HandleFunc("/", dump)
 	http.ListenAndServe(fmt.Sprintf(":%s", listenPort), nil)
-}
+}*/

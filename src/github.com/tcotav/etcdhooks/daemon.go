@@ -10,6 +10,7 @@ import (
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/nagios"
+	"github.com/tcotav/etcdhooks/web"
 	"log"
 	"strings"
 )
@@ -53,6 +54,10 @@ func main() {
 	//etcdWatcher.DumpMap()
 	log.Println("Generating initial config files")
 	regenFiles()
+  //
+  // spin up the web server
+  //
+  go webservice.StartWebService(config["web_listen_port"])
 	watchChan := make(chan *etcd.Response)
 	go client.Watch("/site/", 0, true, watchChan, nil)
 	log.Println("Waiting for an update...")
