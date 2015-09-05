@@ -21,8 +21,7 @@ echo "export GOROOT=/usr/local/go" >> ~/.bashrc
 echo "export GOPATH=~/go" >> ~/.bashrc
 export GOPATH=~/go
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$GOROOT/bin
-
-echo "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$GOROOT/bin"
+echo "export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:$GOROOT/bin" >> ~/.bashrc
 mkdir -p ~/go/src
 #mkdir -p ~/go/bin
 cd ~/go
