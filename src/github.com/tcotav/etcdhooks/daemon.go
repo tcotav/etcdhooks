@@ -27,9 +27,13 @@ var host_list_file = "/tmp/host_list.cfg"
 // updateHost wrapper containing async function calls to update the internal map
 // as well as the config files
 func updateHost(k string, v string) {
+  hostMap :=etcdWatcher.Map()
+  _, containsHost := hostMap[k]
 	go etcdWatcher.UpdateMap(k, v)
-	// run the updateNagios command
-	regenFiles()
+  // regenerate these files ONLY if it is a new host
+  if !containsHost {
+	  regenHosts()
+  }
 }
 
 func writeHostMap(hostMap map[string]int) {
@@ -44,9 +48,10 @@ func writeHostMap(hostMap map[string]int) {
     }
 }
 
-// regenFiles utility function that calls ALL of the file regen methods.
-// Currently only handles nagios
-func regenFiles() {
+// regenHostFiles utility function that calls regen methods for files/persistence that contain only
+// host data.  We pass along up/down and in/out service info too -- that should be handled with a different
+// method.
+func regenHosts() {
   hostMap :=etcdWatcher.Map()
 	go nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
   go writeHostMap(hostMap)
@@ -56,7 +61,7 @@ func removeHost(k string) {
 	go etcdWatcher.DeleteFromMap(k)
 	// remove from map
 	// run the updateNagios command
-	regenFiles()
+	regenHosts()
 }
 
 func main() {
@@ -72,7 +77,7 @@ func main() {
 	//log.Println("Dumping map contents for verification")
 	//etcdWatcher.DumpMap()
 	log.Println("Generating initial config files")
-	regenFiles()
+	regenHosts()
   //
   // spin up the web server
   //
