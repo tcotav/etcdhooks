@@ -6,15 +6,15 @@ Script that watched etcd and rewrites configuration files on change in etcd
 
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
+	"fmt"
 	"github.com/coreos/go-etcd/etcd"
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/nagios"
 	"github.com/tcotav/etcdhooks/web"
 	"log"
+	"os"
 	"strings"
-  "os"
-  "fmt"
 )
 
 // think we want to dump a lot of this into a config
@@ -27,34 +27,34 @@ var host_list_file = "/tmp/host_list.cfg"
 // updateHost wrapper containing async function calls to update the internal map
 // as well as the config files
 func updateHost(k string, v string) {
-  hostMap :=etcdWatcher.Map()
-  _, containsHost := hostMap[k]
+	hostMap := etcdWatcher.Map()
+	_, containsHost := hostMap[k]
 	go etcdWatcher.UpdateMap(k, v)
-  // regenerate these files ONLY if it is a new host
-  if !containsHost {
-	  regenHosts()
-  }
+	// regenerate these files ONLY if it is a new host
+	if !containsHost {
+		regenHosts()
+	}
 }
 
 func writeHostMap(hostMap map[string]int) {
-  f, err := os.Create(host_list_file)
-  if err != nil {
-    log.Fatal(err)
-  }
-  defer f.Close()
+	f, err := os.Create(host_list_file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
 
-  for host:= range hostMap {
-    f.WriteString(fmt.Sprintf("%s\n",host))
-    }
+	for host := range hostMap {
+		f.WriteString(fmt.Sprintf("%s\n", host))
+	}
 }
 
 // regenHostFiles utility function that calls regen methods for files/persistence that contain only
 // host data.  We pass along up/down and in/out service info too -- that should be handled with a different
 // method.
 func regenHosts() {
-  hostMap :=etcdWatcher.Map()
+	hostMap := etcdWatcher.Map()
 	go nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
-  go writeHostMap(hostMap)
+	go writeHostMap(hostMap)
 }
 
 func removeHost(k string) {
@@ -68,20 +68,22 @@ func main() {
 	config := config.ParseConfig("daemon.cfg")
 	nagios_host_file = config["nagios_host_file"]
 	nagios_group_file = config["nagios_groups_file"]
-  host_list_file = config["host_list_file"]
+	host_list_file = config["host_list_file"]
 
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
+	log.Println("got error list")
 	client := etcd.NewClient(etcd_server_list)
+	log.Println("got client")
 	etcdWatcher.InitDataMap(client)
-	//log.Println("Dumping map contents for verification")
-	//etcdWatcher.DumpMap()
+	log.Println("Dumping map contents for verification")
+	etcdWatcher.DumpMap()
 	log.Println("Generating initial config files")
 	regenHosts()
-  //
-  // spin up the web server
-  //
-  go webservice.StartWebService(config["web_listen_port"])
+	//
+	// spin up the web server
+	//
+	go webservice.StartWebService(config["web_listen_port"])
 	watchChan := make(chan *etcd.Response)
 	go client.Watch(config["base_etcd_url"], 0, true, watchChan, nil)
 	log.Println("Waiting for an update...")
