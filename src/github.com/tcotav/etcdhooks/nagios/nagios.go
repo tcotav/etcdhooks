@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -40,17 +41,20 @@ func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 		log.Fatal(err)
 	}
 	defer f.Close()
-
 	hostGroups := make(map[string][]string)
-	//take a canned map of hosts, generate host and hostgroup files
+	hostlist := make([]string, 0, len(hdMap))
 	for host := range hdMap {
+		hostlist = append(hostlist, host)
+	}
+	sort.Strings(hostlist)
+
+	for _, h := range hostlist {
 		// for each hostey in the map
 		// write out a hostdef
 		// append hostname to a group list
-		f.WriteString(fmt.Sprintf(HostDef, host, host, host))
-
-		group := extractGroup(host)
-		hostGroups[group] = append(hostGroups[group], host)
+		f.WriteString(fmt.Sprintf(HostDef, h, h, h))
+		group := extractGroup(h)
+		hostGroups[group] = append(hostGroups[group], h)
 	}
 	// at the end, write out the group file using the group list
 
