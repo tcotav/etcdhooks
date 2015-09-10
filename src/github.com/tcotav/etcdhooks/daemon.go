@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 // think we want to dump a lot of this into a config
@@ -36,6 +37,7 @@ func updateHost(k string, v string) {
 	}
 }
 
+
 func writeHostMap(hostMap map[string]int) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
@@ -48,10 +50,34 @@ func writeHostMap(hostMap map[string]int) {
 	}
 }
 
+
+var limiterOn = false
+const fileRewriteInterval = 30
+var lastFileWrite = time.Now().Add(time.Second * 1000 * -1) // initialize to some point in the past
+
 // regenHostFiles utility function that calls regen methods for files/persistence that contain only
 // host data.  We pass along up/down and in/out service info too -- that should be handled with a different
-// method.
+// method.  Currently limited so that we don't write More than fileRewriteInterval seconds.
 func regenHosts() {
+	if limiterOn { // we're already waiting on a file rewrite
+		return
+	}
+
+	// do some date math here -- have we waited long enough to write our file?
+	if time.Now().Before(lastFileWrite.Add(time.Second * fileRewriteInterval))  {
+		log.Println("limiter kicked in")
+		limiterOn=true
+		// these statements cause us to wait fileRewriteInterval seconds before continuing
+		limiter := time.Tick(time.Second * fileRewriteInterval)
+    <-limiter
+	}
+
+	// flip back our counters
+	limiterOn=false
+	lastFileWrite = time.Now()
+
+	log.Println("generating files")
+	// do the work
 	hostMap := etcdWatcher.Map()
 	go nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
 	go writeHostMap(hostMap)
