@@ -37,7 +37,6 @@ func updateHost(k string, v string) {
 	}
 }
 
-
 func writeHostMap(hostMap map[string]int) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
@@ -50,9 +49,10 @@ func writeHostMap(hostMap map[string]int) {
 	}
 }
 
-
 var limiterOn = false
+
 const fileRewriteInterval = 30
+
 var lastFileWrite = time.Now().Add(time.Second * 1000 * -1) // initialize to some point in the past
 
 // regenHostFiles utility function that calls regen methods for files/persistence that contain only
@@ -64,16 +64,16 @@ func regenHosts() {
 	}
 
 	// do some date math here -- have we waited long enough to write our file?
-	if time.Now().Before(lastFileWrite.Add(time.Second * fileRewriteInterval))  {
+	if time.Now().Before(lastFileWrite.Add(time.Second * fileRewriteInterval)) {
 		log.Println("limiter kicked in")
-		limiterOn=true
+		limiterOn = true
 		// these statements cause us to wait fileRewriteInterval seconds before continuing
 		limiter := time.Tick(time.Second * fileRewriteInterval)
-    <-limiter
+		<-limiter
 	}
 
 	// flip back our counters
-	limiterOn=false
+	limiterOn = false
 	lastFileWrite = time.Now()
 
 	log.Println("generating files")
@@ -84,7 +84,7 @@ func regenHosts() {
 }
 
 func removeHost(k string) {
-	go etcdWatcher.DeleteFromMap(k)
+	etcdWatcher.DeleteFromMap(k)
 	// remove from map
 	// run the updateNagios command
 	regenHosts()
