@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"sort"
 	"strings"
 )
@@ -24,6 +25,53 @@ var GroupDef = `define hostgroup {
          }
 
 `
+
+var nagiosCheckCmd = "/usr/sbin/nagios3"
+var nagiosCheckArgs = []string{"-v", "/etc/nagios3/nagios.cfg"}
+var nagiosPIDCmd = "pgrep"
+var nagiosPIDArgs = []string{"nagios3"}
+var nagiosHUPCmd = "kill"
+var nagiosHUPArgs = []string{"-HUP"}
+
+func execCmdOutput(cmdName string, cmdArgs []string) (string, error) {
+	cmdOut, err := exec.Command(cmdName, cmdArgs...).Output()
+	if err != nil {
+		log.Fatalf("cmd.exec:%s -- %s", cmdName, err)
+		return "", err
+	}
+	return strings.TrimSpace(string(cmdOut)), nil
+}
+
+func execCmd(cmdName string, cmdArgs []string) error {
+	cmd := exec.Command(cmdName, cmdArgs...)
+	if err := cmd.Start(); err != nil {
+		log.Fatalf("cmd.Start:%s -- %s", cmdName, err)
+		return err
+	}
+	// check for non-zero exit code
+	if err := cmd.Wait(); err != nil {
+		log.Fatalf("cmd.Wait:%s -- %s", cmdName, err)
+		return err
+	}
+	return nil
+}
+
+func RestartNagios() {
+	if err := execCmd(nagiosCheckCmd, nagiosCheckArgs); err != nil {
+		log.Fatal("check nagios config failed")
+	}
+	log.Print("check nagios succeeded")
+
+	pid, err := execCmdOutput(nagiosPIDCmd, nagiosPIDArgs)
+	if err != nil {
+		log.Fatal("get nagios PID failed")
+	}
+	log.Printf("got nagios pid: %s", pid)
+	useArgs := append(nagiosHUPArgs, pid)
+	if err := execCmd(nagiosHUPCmd, useArgs); err != nil {
+		log.Fatal("HUP nagios failed")
+	}
+}
 
 func extractGroup(s string) string {
 	slist := strings.Split(s, "-")
@@ -69,6 +117,8 @@ func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 		sHosts := strings.Join(hostGroups[k], ",")
 		f1.WriteString(fmt.Sprintf(GroupDef, k, k, sHosts))
 	}
+
+	go RestartNagios()
 }
 
 func main() {
