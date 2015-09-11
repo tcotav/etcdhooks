@@ -33,6 +33,7 @@ cd /opt
 sudo ln -s /opt/etcd-v2.1.2-linux-amd64 /opt/etcd
 
 cd /opt/etcd
-sudo cp ~/go/github.com/tcotav/etcdhooks/etcdhooks .
-sudo cp ~/go/github.com/tcotav/etcdhooks/daemon.cfg .
+sudo cp ~/go/src/github.com/tcotav/etcdhooks/etcdhooks .
+sudo cp ~/go/src/github.com/tcotav/etcdhooks/daemon.cfg .
 
+sudo cp ~/etcdhooks/scripts/*-hooks.sh .
