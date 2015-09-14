@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var hostMap = make(map[string]int)
+var hostMap map[string]int
 
 // Map returns the hostmap
 func Map() map[string]int {
@@ -30,17 +30,19 @@ func ClientGet(client *etcd.Client, url string) *etcd.Response {
 }
 
 func DeleteFromMap(k string) {
+  log.Printf("deleting key: %s", k)
 	delete(hostMap, k)
 }
 
-// InitDataMap initializes a local map of hostnames and their respective metadata as
-// struct: ip, status, name
-func InitDataMap(client *etcd.Client) {
+
+var etcdClient *etcd.Client
+func BuildMap() {
 	baseStr := "/site"
-	resp := ClientGet(client, baseStr)
+  hostMap = make(map[string]int)
+	resp := ClientGet(etcdClient, baseStr)
 	// get the list of host type
 	for _, n := range resp.Node.Nodes {
-		resp1 := ClientGet(client, n.Key)
+		resp1 := ClientGet(etcdClient, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
 			// key format is /site/web/001 -- we want site-web-001
 			hostName := strings.Replace(n1.Key[1:], "/", "-", -1)
@@ -57,6 +59,15 @@ func InitDataMap(client *etcd.Client) {
 			hostMap[hostName] = i
 		}
 	}
+}
+
+
+
+// InitDataMap initializes a local map of hostnames and their respective metadata as
+// struct: ip, status, name
+func InitDataMap(client *etcd.Client) {
+  etcdClient = client
+  BuildMap()
 }
 
 // DumpServices is a utility method that dumps all contents of etcd that match

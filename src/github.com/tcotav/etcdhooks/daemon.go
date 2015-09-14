@@ -50,9 +50,7 @@ func writeHostMap(hostMap map[string]int) {
 }
 
 var limiterOn = false
-
 const fileRewriteInterval = 30
-
 var lastFileWrite = time.Now().Add(time.Second * 1000 * -1) // initialize to some point in the past
 
 // regenHostFiles utility function that calls regen methods for files/persistence that contain only
@@ -78,15 +76,14 @@ func regenHosts() {
 
 	log.Println("generating files")
 	// do the work
+  etcdWatcher.BuildMap()
 	hostMap := etcdWatcher.Map()
 	go nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
 	go writeHostMap(hostMap)
 }
 
 func removeHost(k string) {
-	etcdWatcher.DeleteFromMap(k)
-	// remove from map
-	// run the updateNagios command
+  log.Printf("removeHost in daemon.go -- k:%s", k)
 	regenHosts()
 }
 
@@ -123,6 +120,7 @@ func main() {
 			switch action {
 			case "delete":
 				log.Printf("delete of key: %s", k)
+	      etcdWatcher.InitDataMap(client)
 				go removeHost(k)
 			case "set":
 				log.Printf("update of key: %s, value: %s", k, v)
