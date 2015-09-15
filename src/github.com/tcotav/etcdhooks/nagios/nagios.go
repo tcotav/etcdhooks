@@ -118,7 +118,7 @@ func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 		f1.WriteString(fmt.Sprintf(GroupDef, k, k, sHosts))
 	}
 
-	go RestartNagios()
+	//go RestartNagios()
 }
 
 func main() {
