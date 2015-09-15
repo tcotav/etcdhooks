@@ -7,7 +7,8 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"fmt"
-	"github.com/coreos/go-etcd/etcd"
+	"github.com/coreos/etcd/client"
+  "github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"log"
 	"strconv"
 	"strings"
@@ -20,9 +21,11 @@ func Map() map[string]int {
 	return hostMap
 }
 
+var clientGetOpts = client.GetOptions{Recursive: true, Sort: true}
+
 // ClientGet gets data from etcd sending in an url and receiving a etcd.Response object
-func ClientGet(client *etcd.Client, url string) *etcd.Response {
-	resp, err := client.Get(url, true, true)
+func ClientGet(kapi client.KeysAPI, url string) *client.Response {
+	resp, err := kapi.Get(context.Background(), url, &clientGetOpts)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,12 +38,12 @@ func DeleteFromMap(k string) {
 
 // InitDataMap initializes a local map of hostnames and their respective metadata as
 // struct: ip, status, name
-func InitDataMap(client *etcd.Client) {
+func InitDataMap(kapi client.KeysAPI) {
 	baseStr := "/site"
-	resp := ClientGet(client, baseStr)
+	resp := ClientGet(kapi, baseStr)
 	// get the list of host type
 	for _, n := range resp.Node.Nodes {
-		resp1 := ClientGet(client, n.Key)
+		resp1 := ClientGet(kapi, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
 			// key format is /site/web/001 -- we want site-web-001
 			hostName := strings.Replace(n1.Key[1:], "/", "-", -1)
@@ -61,12 +64,12 @@ func InitDataMap(client *etcd.Client) {
 
 // DumpServices is a utility method that dumps all contents of etcd that match
 // a specified base string
-func DumpServices(client *etcd.Client, baseStr string) {
+func DumpServices(kapi client.KeysAPI, baseStr string) {
 	//baseStr := "/site"
-	resp := ClientGet(client, baseStr)
+	resp := ClientGet(kapi, baseStr)
 	// get the list of host type
 	for _, n := range resp.Node.Nodes {
-		resp1 := ClientGet(client, n.Key)
+		resp1 := ClientGet(kapi, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
 			log.Printf("%s: %s\n", n1.Key, n1.Value)
 		}
@@ -98,7 +101,6 @@ func main() {
 	/*
 	  TODO:
 	  - write code for generating our nagios config and our hostfile
-	*/
 	client := etcd.NewClient([]string{"http://127.0.0.1:4001"})
 	//hostMap =map[string]*HostData
 	InitDataMap(client)
@@ -110,12 +112,9 @@ func main() {
 		case r := <-watchChan:
 			// do something with it here
 			log.Printf("Updated KV: %s: %s\n", r.Node.Key, r.Node.Value)
-			/*kvp := new(KVPair)
-			kvp.Key = r.Node.Key
-			kvp.Value = r.Node.Value
-			go UpdateMap(kvp.Key, kvp.Value)*/
-		}
+			}
 	}
 	// we don't really care what changed in this case so...
 	//DumpServices(client)
+	*/
 }

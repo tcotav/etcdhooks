@@ -32,9 +32,9 @@ go get github.com/coreos/go-etcd/etcd
 
 ### Set up etcd
 
-curl -L  https://github.com/coreos/etcd/releases/download/v2.1.2/etcd-v2.1.2-linux-amd64.tar.gz -o etcd-v2.1.2-linux-amd64.tar.gz
-tar xzvf etcd-v2.1.2-linux-amd64.tar.gz
-cd etcd-v2.1.2-linux-amd64
-sudo ./etcd &
+curl -L https://github.com/coreos/etcd/releases/download/v2.2.0/etcd-v2.2.0-linux-amd64.tar.gz -o etcd-v2.2.0-linux-amd64.tar.gz
+tar xzvf etcd-v2.2.0-linux-amd64.tar.gz
+#cd etcd-v2.2.0-linux-amd64
+#sudo ./etcd &
 
 
