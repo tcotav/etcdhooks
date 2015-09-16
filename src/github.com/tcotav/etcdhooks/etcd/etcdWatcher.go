@@ -37,14 +37,24 @@ func DeleteFromMap(k string) {
 	delete(hostMap, k)
 }
 
+
+var kapiClient client.KeysAPI
+var rootUrl string
+
 // InitDataMap initializes a local map of hostnames and their respective metadata as
 // struct: ip, status, name
-func InitDataMap(kapi client.KeysAPI) {
-	baseStr := "/site"
-	resp := ClientGet(kapi, baseStr)
+func InitDataMap(kapi client.KeysAPI, baseStr string) {
+	kapiClient = kapi
+	rootUrl = baseStr
+	BuildMap()
+}
+
+func BuildMap() {
+	resp := ClientGet(kapiClient, rootUrl)
+  hostMap = make(map[string]int)
 	// get the list of host type
 	for _, n := range resp.Node.Nodes {
-		resp1 := ClientGet(kapi, n.Key)
+		resp1 := ClientGet(kapiClient, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
 			// key format is /site/web/001 -- we want site-web-001
 			hostName := strings.Replace(n1.Key[1:], "/", "-", -1)
@@ -63,14 +73,6 @@ func InitDataMap(kapi client.KeysAPI) {
 	}
 }
 
-
-
-// InitDataMap initializes a local map of hostnames and their respective metadata as
-// struct: ip, status, name
-func InitDataMap(client *etcd.Client) {
-  etcdClient = client
-  BuildMap()
-}
 
 // DumpServices is a utility method that dumps all contents of etcd that match
 // a specified base string

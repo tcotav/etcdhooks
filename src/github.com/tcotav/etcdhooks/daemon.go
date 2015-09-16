@@ -8,6 +8,7 @@ Script that watched etcd and rewrites configuration files on change in etcd
 import (
 	"fmt"
   "github.com/coreos/etcd/client"
+  "github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/nagios"
@@ -92,6 +93,7 @@ func main() {
 	nagios_host_file = config["nagios_host_file"]
 	nagios_group_file = config["nagios_groups_file"]
 	host_list_file = config["host_list_file"]
+	watch_root := config["etcd_watch_root_url"]
 
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
@@ -108,7 +110,7 @@ func main() {
   kapi := client.NewKeysAPI(c)
 
 	log.Println("got client")
-	etcdWatcher.InitDataMap(kapi)
+	etcdWatcher.InitDataMap(kapi, watch_root)
 	log.Println("Dumping map contents for verification")
 	etcdWatcher.DumpMap()
 	log.Println("Generating initial config files")
@@ -117,13 +119,14 @@ func main() {
 	// spin up the web server
 	//
 	go webservice.StartWebService(config["web_listen_port"])
-	watchChan := make(chan *client.Response)
 	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
-	go kapi.Watcher(config["base_etcd_url"], 0, true, watchChan, nil)
+	w := kapi.Watcher(watch_root, &watcherOpts)
 	log.Println("Waiting for an update...")
 	for {
-		select {
-		case r := <-watchChan:
+			r, err := w.Next(context.Background())
+			if err != nil {
+				log.Fatal("Error watching etcd", err)		
+			}
 			// do something with it here
 			action := r.Action
 			k := r.Node.Key
@@ -131,14 +134,10 @@ func main() {
 			switch action {
 			case "delete":
 				log.Printf("delete of key: %s", k)
-	      etcdWatcher.InitDataMap(client)
 				go removeHost(k)
 			case "set":
 				log.Printf("update of key: %s, value: %s", k, v)
 				go updateHost(k, v)
 			}
 		}
-	}
-	// we don't really care what changed in this case so...
-	//DumpServices(client)
 }
