@@ -16,7 +16,8 @@ mkdir -p ~/go/src
 cd ~/go
 
 # get the etcd and any other packages you need
-go get github.com/coreos/go-etcd/etcd
+#go get github.com/coreos/go-etcd/etcd
+go get github.com/coreos/etcd/client
 
 cd ~/go/github.com
 ln -s ~/etcdhooks/src/github.com/tcotav
