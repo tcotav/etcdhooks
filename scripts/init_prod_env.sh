@@ -25,12 +25,10 @@ cd ~/go/github.com/tcotav/etcdhooks
 go build -o etcdhooks daemon.go 
 
 ### Set up etcd
-cd ~/
-curl -L  https://github.com/coreos/etcd/releases/download/v2.1.2/etcd-v2.1.2-linux-amd64.tar.gz -o etcd-v2.1.2-linux-amd64.tar.gz
-tar xzvf etcd-v2.1.2-linux-amd64.tar.gz
-sudo mv etcd-v2.1.2-linux-amd64 /opt
-cd /opt
-sudo ln -s /opt/etcd-v2.1.2-linux-amd64 /opt/etcd
+curl -L https://github.com/coreos/etcd/releases/download/v2.2.0/etcd-v2.2.0-linux-amd64.tar.gz -o etcd-v2.2.0-linux-amd64.tar.gz
+tar xzvf etcd-v2.2.0-linux-amd64.tar.gz
+#cd etcd-v2.2.0-linux-amd64
+#sudo ./etcd &
 
 cd /opt/etcd
 sudo cp ~/go/src/github.com/tcotav/etcdhooks/etcdhooks .

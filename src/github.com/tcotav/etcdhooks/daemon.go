@@ -7,7 +7,7 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"fmt"
-	"github.com/coreos/go-etcd/etcd"
+  "github.com/coreos/etcd/client"
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/nagios"
@@ -95,10 +95,20 @@ func main() {
 
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
-	log.Println("got error list")
-	client := etcd.NewClient(etcd_server_list)
+  cfg := client.Config{
+      Endpoints:               etcd_server_list,
+      Transport:               client.DefaultTransport,
+      // set timeout per request to fail fast when the target endpoint is unavailable
+      HeaderTimeoutPerRequest: time.Second,
+  }
+  c, err := client.New(cfg)
+  if err != nil {
+      log.Fatal(err)
+  }
+  kapi := client.NewKeysAPI(c)
+
 	log.Println("got client")
-	etcdWatcher.InitDataMap(client)
+	etcdWatcher.InitDataMap(kapi)
 	log.Println("Dumping map contents for verification")
 	etcdWatcher.DumpMap()
 	log.Println("Generating initial config files")
@@ -107,8 +117,9 @@ func main() {
 	// spin up the web server
 	//
 	go webservice.StartWebService(config["web_listen_port"])
-	watchChan := make(chan *etcd.Response)
-	go client.Watch(config["base_etcd_url"], 0, true, watchChan, nil)
+	watchChan := make(chan *client.Response)
+	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
+	go kapi.Watcher(config["base_etcd_url"], 0, true, watchChan, nil)
 	log.Println("Waiting for an update...")
 	for {
 		select {
