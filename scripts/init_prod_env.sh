@@ -36,3 +36,5 @@ sudo cp ~/go/src/github.com/tcotav/etcdhooks/etcdhooks .
 sudo cp ~/go/src/github.com/tcotav/etcdhooks/daemon.cfg .
 
 sudo cp ~/etcdhooks/scripts/*-hooks.sh .
+
+curl -L http://127.0.0.1:4001/v2/keys/site -XPUT -d value=1
