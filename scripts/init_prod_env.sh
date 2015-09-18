@@ -18,6 +18,7 @@ cd ~/go
 # get the etcd and any other packages you need
 #go get github.com/coreos/go-etcd/etcd
 go get github.com/coreos/etcd/client
+go get github.com/Sirupsen/logrus
 
 cd ~/go/github.com
 ln -s ~/etcdhooks/src/github.com/tcotav
