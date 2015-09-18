@@ -7,8 +7,8 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"fmt"
-  "github.com/coreos/etcd/client"
-  "github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
+	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
+	"github.com/coreos/etcd/client"
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/nagios"
@@ -38,7 +38,7 @@ func updateHost(k string, v string) {
 	}
 }
 
-func writeHostMap(hostMap map[string]int) {
+func writeHostMap(hostMap map[string]string) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +51,9 @@ func writeHostMap(hostMap map[string]int) {
 }
 
 var limiterOn = false
+
 const fileRewriteInterval = 30
+
 var lastFileWrite = time.Now().Add(time.Second * 1000 * -1) // initialize to some point in the past
 
 // regenHostFiles utility function that calls regen methods for files/persistence that contain only
@@ -77,14 +79,14 @@ func regenHosts() {
 
 	log.Println("generating files")
 	// do the work
-  etcdWatcher.BuildMap()
+	etcdWatcher.BuildMap()
 	hostMap := etcdWatcher.Map()
 	go nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
 	go writeHostMap(hostMap)
 }
 
 func removeHost(k string) {
-  log.Printf("removeHost in daemon.go -- k:%s", k)
+	log.Printf("removeHost in daemon.go -- k:%s", k)
 	regenHosts()
 }
 
@@ -97,17 +99,17 @@ func main() {
 
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
-  cfg := client.Config{
-      Endpoints:               etcd_server_list,
-      Transport:               client.DefaultTransport,
-      // set timeout per request to fail fast when the target endpoint is unavailable
-      HeaderTimeoutPerRequest: time.Second,
-  }
-  c, err := client.New(cfg)
-  if err != nil {
-      log.Fatal(err)
-  }
-  kapi := client.NewKeysAPI(c)
+	cfg := client.Config{
+		Endpoints: etcd_server_list,
+		Transport: client.DefaultTransport,
+		// set timeout per request to fail fast when the target endpoint is unavailable
+		HeaderTimeoutPerRequest: time.Second,
+	}
+	c, err := client.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	kapi := client.NewKeysAPI(c)
 
 	log.Println("got client")
 	etcdWatcher.InitDataMap(kapi, watch_root)
@@ -123,21 +125,21 @@ func main() {
 	w := kapi.Watcher(watch_root, &watcherOpts)
 	log.Println("Waiting for an update...")
 	for {
-			r, err := w.Next(context.Background())
-			if err != nil {
-				log.Fatal("Error watching etcd", err)		
-			}
-			// do something with it here
-			action := r.Action
-			k := r.Node.Key
-			v := r.Node.Value
-			switch action {
-			case "delete":
-				log.Printf("delete of key: %s", k)
-				go removeHost(k)
-			case "set":
-				log.Printf("update of key: %s, value: %s", k, v)
-				go updateHost(k, v)
-			}
+		r, err := w.Next(context.Background())
+		if err != nil {
+			log.Fatal("Error watching etcd", err)
 		}
+		// do something with it here
+		action := r.Action
+		k := r.Node.Key
+		v := r.Node.Value
+		switch action {
+		case "delete":
+			log.Printf("delete of key: %s", k)
+			go removeHost(k)
+		case "set":
+			log.Printf("update of key: %s, value: %s", k, v)
+			go updateHost(k, v)
+		}
+	}
 }

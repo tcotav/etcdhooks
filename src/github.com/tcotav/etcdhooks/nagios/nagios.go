@@ -57,7 +57,7 @@ func execCmd(cmdName string, cmdArgs []string) error {
 }
 
 func RestartNagios() {
-	if err := execCmd(nagiosCheckCmd, nagiosCheckArgs); err != nil {
+	if _, err := execCmdOutput(nagiosCheckCmd, nagiosCheckArgs); err != nil {
 		log.Fatal("check nagios config failed")
 	}
 	log.Print("check nagios succeeded")
@@ -68,9 +68,10 @@ func RestartNagios() {
 	}
 	log.Printf("got nagios pid: %s", pid)
 	useArgs := append(nagiosHUPArgs, pid)
-	if err := execCmd(nagiosHUPCmd, useArgs); err != nil {
+	if _, err := execCmdOutput(nagiosHUPCmd, useArgs); err != nil {
 		log.Fatal("HUP nagios failed")
 	}
+	log.Print("nagios restarted")
 }
 
 func extractGroup(s string) string {
@@ -83,7 +84,7 @@ func extractGroup(s string) string {
 
 // GenerateFiles takes the source host map and writes out a host and group nagios config file
 // to the path passed to the function.
-func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
+func GenerateFiles(hdMap map[string]string, hostPath string, groupPath string) {
 	f, err := os.Create(hostPath)
 	if err != nil {
 		log.Fatal(err)
@@ -118,7 +119,7 @@ func GenerateFiles(hdMap map[string]int, hostPath string, groupPath string) {
 		f1.WriteString(fmt.Sprintf(GroupDef, k, k, sHosts))
 	}
 
-	//go RestartNagios()
+	go RestartNagios()
 }
 
 func main() {
