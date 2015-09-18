@@ -22,7 +22,7 @@ func Map() map[string]string {
 
 var clientGetOpts = client.GetOptions{Recursive: true, Sort: true}
 
-const ltagsrc = "etcdwatcher"
+const ltagsrc = "etcwatc"
 
 // ClientGet gets data from etcd sending in an url and receiving a etcd.Response object
 func ClientGet(kapi client.KeysAPI, url string) *client.Response {
