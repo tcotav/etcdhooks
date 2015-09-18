@@ -38,7 +38,7 @@ func updateHost(k string, v string) {
 	}
 }
 
-const ltagsrc = "main"
+const ltagsrc = "etcmain"
 
 /*const logr.Linfo = "info"
 const logr.Lfatal = "fatal"
