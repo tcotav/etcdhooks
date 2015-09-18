@@ -28,15 +28,20 @@ func init() {
 	logcfg := config.ParseConfig("log.cfg")
 
 	// do we want to dump stack traces?
-	stackTrace, _ := logcfg["stacktrace"]
+	s, _ := logcfg["stacktrace"]
+
+	if s == "true" {
+		stackTrace = true
+	}
 
 	// put overrides here
 	return
 }
 
-func LogFatal(tagsrc string, msg string) {
+func LogFatal(tagsrc string, functionSrc string, msg string) {
 	l := log.WithFields(logrus.Fields{
-		"src": tagsrc,
+		"src":  tagsrc,
+		"func": functionSrc,
 	})
 
 	l.Fatal(msg)

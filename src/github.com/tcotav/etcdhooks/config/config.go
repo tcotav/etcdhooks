@@ -2,7 +2,6 @@ package config
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -15,7 +14,7 @@ const ltagsrc = "etcconf"
 func ParseConfig(fileName string) map[string]string {
 	file, err := os.Open(fileName)
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	defer file.Close()
 
@@ -37,12 +36,12 @@ func ParseConfig(fileName string) map[string]string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	return config
 }
 
 func main() {
 	config := ParseConfig("daemon.cfg")
-	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprint("%v", config))
+	log.Printf("%v", config)
 }
