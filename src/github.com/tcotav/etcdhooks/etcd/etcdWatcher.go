@@ -72,7 +72,7 @@ func DumpServices(kapi client.KeysAPI, baseStr string) {
 	for _, n := range resp.Node.Nodes {
 		resp1 := ClientGet(kapi, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
-			logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%s: %s\n", n1.Key, n1.Value))
+			logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%s: %s", n1.Key, n1.Value))
 		}
 	}
 }
