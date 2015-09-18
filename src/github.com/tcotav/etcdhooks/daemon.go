@@ -7,13 +7,13 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"fmt"
+	"github.com/Sirupsen/logrus"
 	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/coreos/etcd/client"
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/nagios"
 	"github.com/tcotav/etcdhooks/web"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -25,6 +25,8 @@ import (
 var nagios_host_file = "/tmp/hosts.cfg"
 var nagios_group_file = "/tmp/groups.cfg"
 var host_list_file = "/tmp/host_list.cfg"
+
+var log = logrus.New()
 
 // updateHost wrapper containing async function calls to update the internal map
 // as well as the config files
@@ -38,10 +40,41 @@ func updateHost(k string, v string) {
 	}
 }
 
+const linfo = "info"
+const lfatal = "fatal"
+const lwarn = "lwarn"
+const ldebug = "debug"
+const lpanic = "panic"
+const lerror = "error"
+
+const ltagsrc = "main"
+
+func logLine(lvl string, o string) {
+	l := log.WithFields(logrus.Fields{
+		"src": ltagsrc,
+	})
+	switch lvl {
+	case linfo:
+		l.Info(o)
+	case lfatal:
+		l.Fatal(o)
+		os.Exit(3)
+	case lwarn:
+		l.Warn(o)
+	case ldebug:
+		l.Debug(o)
+	case lpanic:
+		l.Panic(o)
+		os.Exit(4)
+	default:
+		l.Info(o)
+	}
+}
+
 func writeHostMap(hostMap map[string]string) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
-		log.Fatal(err)
+		logLine(lerror, err.Error())
 	}
 	defer f.Close()
 
@@ -66,7 +99,7 @@ func regenHosts() {
 
 	// do some date math here -- have we waited long enough to write our file?
 	if time.Now().Before(lastFileWrite.Add(time.Second * fileRewriteInterval)) {
-		log.Println("limiter kicked in")
+		logLine(linfo, "limiter kicked in")
 		limiterOn = true
 		// these statements cause us to wait fileRewriteInterval seconds before continuing
 		limiter := time.Tick(time.Second * fileRewriteInterval)
@@ -77,7 +110,7 @@ func regenHosts() {
 	limiterOn = false
 	lastFileWrite = time.Now()
 
-	log.Println("generating files")
+	logLine(linfo, "generating files")
 	// do the work
 	etcdWatcher.BuildMap()
 	hostMap := etcdWatcher.Map()
@@ -86,7 +119,7 @@ func regenHosts() {
 }
 
 func removeHost(k string) {
-	log.Printf("removeHost in daemon.go -- k:%s", k)
+	logLine(linfo, fmt.Sprintf("removeHost in daemon.go -- k:%s", k))
 	regenHosts()
 }
 
@@ -107,15 +140,15 @@ func main() {
 	}
 	c, err := client.New(cfg)
 	if err != nil {
-		log.Fatal(err)
+		logLine(lfatal, err.Error())
 	}
 	kapi := client.NewKeysAPI(c)
 
-	log.Println("got client")
+	logLine(linfo, "got client")
 	etcdWatcher.InitDataMap(kapi, watch_root)
-	log.Println("Dumping map contents for verification")
+	logLine(linfo, "Dumping map contents for verification")
 	etcdWatcher.DumpMap()
-	log.Println("Generating initial config files")
+	logLine(linfo, "Generating initial config files")
 	regenHosts()
 	//
 	// spin up the web server
@@ -123,11 +156,11 @@ func main() {
 	go webservice.StartWebService(config["web_listen_port"])
 	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
 	w := kapi.Watcher(watch_root, &watcherOpts)
-	log.Println("Waiting for an update...")
+	logLine(linfo, "Waiting for an update...")
 	for {
 		r, err := w.Next(context.Background())
 		if err != nil {
-			log.Fatal("Error watching etcd", err)
+			logLine(lfatal, fmt.Sprintf("Error watching etcd", err.Error()))
 		}
 		// do something with it here
 		action := r.Action
@@ -135,10 +168,10 @@ func main() {
 		v := r.Node.Value
 		switch action {
 		case "delete":
-			log.Printf("delete of key: %s", k)
+			logLine(linfo, fmt.Sprintf("delete of key: %s", k))
 			go removeHost(k)
 		case "set":
-			log.Printf("update of key: %s, value: %s", k, v)
+			logLine(linfo, fmt.Sprintf("update of key: %s, value: %s", k, v))
 			go updateHost(k, v)
 		}
 	}
