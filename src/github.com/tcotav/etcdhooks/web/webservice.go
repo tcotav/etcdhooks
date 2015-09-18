@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tcotav/etcdhooks/etcd"
-	"log"
+	"github.com/tcotav/etcdhooks/logr"
 	"net/http"
 )
+
+const ltagsrc = "etcdweb"
 
 func dump(w http.ResponseWriter, r *http.Request) {
 	js, err := json.Marshal(etcdWatcher.Map())
@@ -21,8 +23,7 @@ func dump(w http.ResponseWriter, r *http.Request) {
 
 func StartWebService(listenPort string) {
 	http.HandleFunc("/", dump)
-
-	log.Printf("Starting webservice on port: %s", listenPort)
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("Starting webservice on port: %s", listenPort))
 	http.ListenAndServe(fmt.Sprintf(":%s", listenPort), nil)
 }
 

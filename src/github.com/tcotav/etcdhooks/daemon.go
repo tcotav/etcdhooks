@@ -7,11 +7,11 @@ Script that watched etcd and rewrites configuration files on change in etcd
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/coreos/etcd/client"
 	"github.com/tcotav/etcdhooks/config"
 	"github.com/tcotav/etcdhooks/etcd"
+	"github.com/tcotav/etcdhooks/logr"
 	"github.com/tcotav/etcdhooks/nagios"
 	"github.com/tcotav/etcdhooks/web"
 	"os"
@@ -26,8 +26,6 @@ var nagios_host_file = "/tmp/hosts.cfg"
 var nagios_group_file = "/tmp/groups.cfg"
 var host_list_file = "/tmp/host_list.cfg"
 
-var log = logrus.New()
-
 // updateHost wrapper containing async function calls to update the internal map
 // as well as the config files
 func updateHost(k string, v string) {
@@ -40,23 +38,24 @@ func updateHost(k string, v string) {
 	}
 }
 
-const linfo = "info"
-const lfatal = "fatal"
+const ltagsrc = "main"
+
+/*const logr.Linfo = "info"
+const logr.Lfatal = "fatal"
 const lwarn = "lwarn"
 const ldebug = "debug"
 const lpanic = "panic"
-const lerror = "error"
+const logr.Lerror = "error"
 
-const ltagsrc = "main"
 
 func logLine(lvl string, o string) {
 	l := log.WithFields(logrus.Fields{
 		"src": ltagsrc,
 	})
 	switch lvl {
-	case linfo:
+	case logr.Linfo:
 		l.Info(o)
-	case lfatal:
+	case logr.Lfatal:
 		l.Fatal(o)
 		os.Exit(3)
 	case lwarn:
@@ -69,12 +68,12 @@ func logLine(lvl string, o string) {
 	default:
 		l.Info(o)
 	}
-}
+}*/
 
 func writeHostMap(hostMap map[string]string) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
-		logLine(lerror, err.Error())
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 	}
 	defer f.Close()
 
@@ -99,7 +98,7 @@ func regenHosts() {
 
 	// do some date math here -- have we waited long enough to write our file?
 	if time.Now().Before(lastFileWrite.Add(time.Second * fileRewriteInterval)) {
-		logLine(linfo, "limiter kicked in")
+		logr.LogLine(logr.Linfo, ltagsrc, "limiter kicked in")
 		limiterOn = true
 		// these statements cause us to wait fileRewriteInterval seconds before continuing
 		limiter := time.Tick(time.Second * fileRewriteInterval)
@@ -110,7 +109,7 @@ func regenHosts() {
 	limiterOn = false
 	lastFileWrite = time.Now()
 
-	logLine(linfo, "generating files")
+	logr.LogLine(logr.Linfo, ltagsrc, "generating files")
 	// do the work
 	etcdWatcher.BuildMap()
 	hostMap := etcdWatcher.Map()
@@ -119,7 +118,7 @@ func regenHosts() {
 }
 
 func removeHost(k string) {
-	logLine(linfo, fmt.Sprintf("removeHost in daemon.go -- k:%s", k))
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("removeHost in daemon.go -- k:%s", k))
 	regenHosts()
 }
 
@@ -140,15 +139,15 @@ func main() {
 	}
 	c, err := client.New(cfg)
 	if err != nil {
-		logLine(lfatal, err.Error())
+		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
 	}
 	kapi := client.NewKeysAPI(c)
 
-	logLine(linfo, "got client")
+	logr.LogLine(logr.Linfo, ltagsrc, "got client")
 	etcdWatcher.InitDataMap(kapi, watch_root)
-	logLine(linfo, "Dumping map contents for verification")
+	logr.LogLine(logr.Linfo, ltagsrc, "Dumping map contents for verification")
 	etcdWatcher.DumpMap()
-	logLine(linfo, "Generating initial config files")
+	logr.LogLine(logr.Linfo, ltagsrc, "Generating initial config files")
 	regenHosts()
 	//
 	// spin up the web server
@@ -156,11 +155,11 @@ func main() {
 	go webservice.StartWebService(config["web_listen_port"])
 	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
 	w := kapi.Watcher(watch_root, &watcherOpts)
-	logLine(linfo, "Waiting for an update...")
+	logr.LogLine(logr.Linfo, ltagsrc, "Waiting for an update...")
 	for {
 		r, err := w.Next(context.Background())
 		if err != nil {
-			logLine(lfatal, fmt.Sprintf("Error watching etcd", err.Error()))
+			logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error watching etcd", err.Error()))
 		}
 		// do something with it here
 		action := r.Action
@@ -168,10 +167,10 @@ func main() {
 		v := r.Node.Value
 		switch action {
 		case "delete":
-			logLine(linfo, fmt.Sprintf("delete of key: %s", k))
+			logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("delete of key: %s", k))
 			go removeHost(k)
 		case "set":
-			logLine(linfo, fmt.Sprintf("update of key: %s, value: %s", k, v))
+			logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("update of key: %s, value: %s", k, v))
 			go updateHost(k, v)
 		}
 	}

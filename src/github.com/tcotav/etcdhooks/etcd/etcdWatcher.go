@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/coreos/etcd/client"
-	"log"
+	"github.com/tcotav/etcdhooks/logr"
 	"strings"
 )
 
@@ -22,17 +22,19 @@ func Map() map[string]string {
 
 var clientGetOpts = client.GetOptions{Recursive: true, Sort: true}
 
+const ltagsrc = "etcdwatcher"
+
 // ClientGet gets data from etcd sending in an url and receiving a etcd.Response object
 func ClientGet(kapi client.KeysAPI, url string) *client.Response {
 	resp, err := kapi.Get(context.Background(), url, &clientGetOpts)
 	if err != nil {
-		log.Fatal(err)
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 	}
 	return resp
 }
 
 func DeleteFromMap(k string) {
-	log.Printf("deleting key: %s", k)
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("deleting key: %s", k))
 	delete(hostMap, k)
 }
 
@@ -70,7 +72,7 @@ func DumpServices(kapi client.KeysAPI, baseStr string) {
 	for _, n := range resp.Node.Nodes {
 		resp1 := ClientGet(kapi, n.Key)
 		for _, n1 := range resp1.Node.Nodes {
-			log.Printf("%s: %s\n", n1.Key, n1.Value)
+			logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%s: %s\n", n1.Key, n1.Value))
 		}
 	}
 }
@@ -78,7 +80,7 @@ func DumpServices(kapi client.KeysAPI, baseStr string) {
 // DumpMap walks the host map and dumps out key-value pairs
 func DumpMap() {
 	for k, v := range hostMap {
-		log.Printf("%s: %+v\n", k, v)
+		logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%s: %+v\n", k, v))
 	}
 }
 

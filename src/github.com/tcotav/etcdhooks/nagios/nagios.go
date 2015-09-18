@@ -2,7 +2,7 @@ package nagios
 
 import (
 	"fmt"
-	"log"
+	"github.com/tcotav/etcdhooks/logr"
 	"os"
 	"os/exec"
 	"sort"
@@ -26,6 +26,9 @@ var GroupDef = `define hostgroup {
 
 `
 
+const ltagsrc = "etcdnagios"
+
+// TODO: convert this to params
 var nagiosCheckCmd = "/usr/sbin/nagios3"
 var nagiosCheckArgs = []string{"-v", "/etc/nagios3/nagios.cfg"}
 var nagiosPIDCmd = "pgrep"
@@ -36,7 +39,7 @@ var nagiosHUPArgs = []string{"-HUP"}
 func execCmdOutput(cmdName string, cmdArgs []string) (string, error) {
 	cmdOut, err := exec.Command(cmdName, cmdArgs...).Output()
 	if err != nil {
-		log.Fatalf("cmd.exec:%s -- %s", cmdName, err)
+		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("cmd.exec:%s -- %s", cmdName, err))
 		return "", err
 	}
 	return strings.TrimSpace(string(cmdOut)), nil
@@ -45,12 +48,12 @@ func execCmdOutput(cmdName string, cmdArgs []string) (string, error) {
 func execCmd(cmdName string, cmdArgs []string) error {
 	cmd := exec.Command(cmdName, cmdArgs...)
 	if err := cmd.Start(); err != nil {
-		log.Fatalf("cmd.Start:%s -- %s", cmdName, err)
+		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("cmd.Start:%s -- %s", cmdName, err))
 		return err
 	}
 	// check for non-zero exit code
 	if err := cmd.Wait(); err != nil {
-		log.Fatalf("cmd.Wait:%s -- %s", cmdName, err)
+		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("cmd.Wait:%s -- %s", cmdName, err))
 		return err
 	}
 	return nil
@@ -58,26 +61,26 @@ func execCmd(cmdName string, cmdArgs []string) error {
 
 func RestartNagios() {
 	if _, err := execCmdOutput(nagiosCheckCmd, nagiosCheckArgs); err != nil {
-		log.Fatal("check nagios config failed")
+		logr.LogLine(logr.Lerror, ltagsrc, "check nagios config failed")
 	}
-	log.Print("check nagios succeeded")
+	logr.LogLine(logr.Linfo, ltagsrc, "check nagios succeeded")
 
 	pid, err := execCmdOutput(nagiosPIDCmd, nagiosPIDArgs)
 	if err != nil {
-		log.Fatal("get nagios PID failed")
+		logr.LogLine(logr.Lerror, ltagsrc, "get nagios PID failed")
 	}
-	log.Printf("got nagios pid: %s", pid)
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("got nagios pid: %s", pid))
 	useArgs := append(nagiosHUPArgs, pid)
 	if _, err := execCmdOutput(nagiosHUPCmd, useArgs); err != nil {
-		log.Fatal("HUP nagios failed")
+		logr.LogLine(logr.Lerror, ltagsrc, "HUP nagios failed")
 	}
-	log.Print("nagios restarted")
+	logr.LogLine(logr.Linfo, ltagsrc, "nagios restarted")
 }
 
 func extractGroup(s string) string {
 	slist := strings.Split(s, "-")
 	if len(slist) != 3 {
-		log.Fatal(fmt.Sprintf("Invalid format: %s", s))
+		logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("Invalid format: %s", s))
 	}
 	return slist[1]
 }
@@ -87,7 +90,7 @@ func extractGroup(s string) string {
 func GenerateFiles(hdMap map[string]string, hostPath string, groupPath string) {
 	f, err := os.Create(hostPath)
 	if err != nil {
-		log.Fatal(err)
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 	}
 	defer f.Close()
 	hostGroups := make(map[string][]string)
@@ -109,7 +112,7 @@ func GenerateFiles(hdMap map[string]string, hostPath string, groupPath string) {
 
 	f1, err := os.Create(groupPath)
 	if err != nil {
-		log.Fatal(err)
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 	}
 	defer f1.Close()
 
@@ -133,7 +136,7 @@ func main() {
 
 	f, err := os.Create("/tmp/host.cfg")
 	if err != nil {
-		log.Fatal(err)
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 	}
 	defer f.Close()
 
@@ -150,18 +153,18 @@ func main() {
 		hostGroups[group] = append(hostGroups[group], host)
 	}
 	// at the end, write out the group file using the group list
-	log.Printf("%v", hostGroups)
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%v", hostGroups))
 
 	f1, err := os.Create("/tmp/groups.cfg")
 	if err != nil {
-		log.Fatal(err)
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 	}
 	defer f1.Close()
 
 	// now print out the group file
 	for k := range hostGroups {
 		sHosts := strings.Join(hostGroups[k], ",")
-		log.Printf("group: %s, hosts: %s\n", k, sHosts)
+		logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("group: %s, hosts: %s\n", k, sHosts))
 		f1.WriteString(fmt.Sprintf(GroupDef, k, k, sHosts))
 	}
 }
