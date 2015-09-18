@@ -6,6 +6,7 @@ Script that watched etcd and rewrites configuration files on change in etcd
 
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
+	"flag"
 	"fmt"
 	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/coreos/etcd/client"
@@ -93,7 +94,19 @@ func removeHost(k string) {
 }
 
 func main() {
-	config := config.ParseConfig("daemon.cfg")
+
+	// handle command line args
+	var configFile string
+	flag.StringVar(&configFile, "cfg", "daemon.cfg", "full path to daemon config")
+	var logConfigPath string
+	flag.StringVar(&logConfigPath, "logcfg", "none", "full path to log config")
+	flag.Parse()
+
+	if logConfigPath != "none" {
+		logr.SetConfig(logConfigPath)
+	}
+
+	config := config.ParseConfig(configFile)
 	nagios_host_file = config["nagios_host_file"]
 	nagios_group_file = config["nagios_groups_file"]
 	host_list_file = config["host_list_file"]

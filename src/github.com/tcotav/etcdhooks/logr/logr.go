@@ -13,6 +13,8 @@ import (
 	"runtime"
 )
 
+var stackTrace = false
+var configFile = "log.cfg"
 var log = logrus.New()
 
 const Linfo = "info"
@@ -22,10 +24,15 @@ const Ldebug = "debug"
 const Lpanic = "panic"
 const Lerror = "error"
 
-var stackTrace = false
+// SetConfig sets the path to the log config file we want to use AND resets the
+// module to use it.
+func SetConfig(path string) {
+	configFile = path
+	log = logrus.New()
+}
 
 func init() {
-	logcfg := config.ParseConfig("log.cfg")
+	logcfg := config.ParseConfig(configFile)
 
 	// do we want to dump stack traces?
 	s, _ := logcfg["stacktrace"]
