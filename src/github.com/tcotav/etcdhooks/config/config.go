@@ -3,7 +3,7 @@ package config
 import (
 	"bufio"
 	"fmt"
-	"github.com/tcotav/etcdhooks/logr"
+	"log"
 	"os"
 	"strings"
 )
@@ -15,7 +15,7 @@ const ltagsrc = "etcconf"
 func ParseConfig(fileName string) map[string]string {
 	file, err := os.Open(fileName)
 	if err != nil {
-		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
+		log.Error(err)
 	}
 	defer file.Close()
 
@@ -37,7 +37,7 @@ func ParseConfig(fileName string) map[string]string {
 	}
 
 	if err := scanner.Err(); err != nil {
-		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
+		log.Error(err)
 	}
 	return config
 }

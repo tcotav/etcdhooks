@@ -80,7 +80,7 @@ func DumpServices(kapi client.KeysAPI, baseStr string) {
 // DumpMap walks the host map and dumps out key-value pairs
 func DumpMap() {
 	for k, v := range hostMap {
-		logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%s: %+v\n", k, v))
+		logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("%s: %+v", k, v))
 	}
 }
 

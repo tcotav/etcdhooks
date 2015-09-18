@@ -6,8 +6,11 @@ Script that watched etcd and rewrites configuration files on change in etcd
 
 // http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
+	"fmt"
 	"github.com/Sirupsen/logrus"
+	"github.com/tcotav/etcdhooks/config"
 	"os"
+	"runtime"
 )
 
 var log = logrus.New()
@@ -19,29 +22,56 @@ const Ldebug = "debug"
 const Lpanic = "panic"
 const Lerror = "error"
 
+var stackTrace = false
+
 func init() {
+	logcfg := config.ParseConfig("log.cfg")
+
+	// do we want to dump stack traces?
+	stackTrace, _ := logcfg["stacktrace"]
+
 	// put overrides here
 	return
 }
 
-func LogLine(lvl string, tagsrc string, o string) {
+func LogFatal(tagsrc string, msg string) {
+	l := log.WithFields(logrus.Fields{
+		"src": tagsrc,
+	})
+
+	l.Fatal(msg)
+
+	if stackTrace {
+		lstack := log.WithFields(logrus.Fields{
+			"src":  tagsrc,
+			"func": functionSrc,
+			"data": "stack",
+		})
+		//stack trace
+		var stack [4096]byte
+		runtime.Stack(stack[:], false)
+		lstack.Fatal(fmt.Sprintf("%s", stack[:]))
+	}
+}
+
+func LogLine(lvl string, tagsrc string, msg string) {
 	l := log.WithFields(logrus.Fields{
 		"src": tagsrc,
 	})
 	switch lvl {
 	case Linfo:
-		l.Info(o)
+		l.Info(msg)
 	case Lfatal:
-		l.Fatal(o)
+		l.Fatal(msg)
 		os.Exit(3)
 	case Lwarn:
-		l.Warn(o)
+		l.Warn(msg)
 	case Ldebug:
-		l.Debug(o)
+		l.Debug(msg)
 	case Lpanic:
-		l.Panic(o)
+		l.Panic(msg)
 		os.Exit(4)
 	default:
-		l.Info(o)
+		l.Info(msg)
 	}
 }

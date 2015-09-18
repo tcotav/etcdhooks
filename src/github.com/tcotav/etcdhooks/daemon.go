@@ -40,36 +40,6 @@ func updateHost(k string, v string) {
 
 const ltagsrc = "etcmain"
 
-/*const logr.Linfo = "info"
-const logr.Lfatal = "fatal"
-const lwarn = "lwarn"
-const ldebug = "debug"
-const lpanic = "panic"
-const logr.Lerror = "error"
-
-
-func logLine(lvl string, o string) {
-	l := log.WithFields(logrus.Fields{
-		"src": ltagsrc,
-	})
-	switch lvl {
-	case logr.Linfo:
-		l.Info(o)
-	case logr.Lfatal:
-		l.Fatal(o)
-		os.Exit(3)
-	case lwarn:
-		l.Warn(o)
-	case ldebug:
-		l.Debug(o)
-	case lpanic:
-		l.Panic(o)
-		os.Exit(4)
-	default:
-		l.Info(o)
-	}
-}*/
-
 func writeHostMap(hostMap map[string]string) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
