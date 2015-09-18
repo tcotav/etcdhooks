@@ -16,6 +16,7 @@ import (
 	"github.com/tcotav/etcdhooks/nagios"
 	"github.com/tcotav/etcdhooks/web"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -55,7 +56,7 @@ func writeHostMap(hostMap map[string]string) {
 
 var limiterOn = false
 
-const fileRewriteInterval = 30
+var fileRewriteInterval = 15
 
 var lastFileWrite = time.Now().Add(time.Second * 1000 * -1) // initialize to some point in the past
 
@@ -68,11 +69,11 @@ func regenHosts() {
 	}
 
 	// do some date math here -- have we waited long enough to write our file?
-	if time.Now().Before(lastFileWrite.Add(time.Second * fileRewriteInterval)) {
+	if time.Now().Before(lastFileWrite.Add(time.Duration(fileRewriteInterval))) {
 		logr.LogLine(logr.Linfo, ltagsrc, "limiter kicked in")
 		limiterOn = true
 		// these statements cause us to wait fileRewriteInterval seconds before continuing
-		limiter := time.Tick(time.Second * fileRewriteInterval)
+		limiter := time.Tick(time.Duration(fileRewriteInterval))
 		<-limiter
 	}
 
@@ -112,6 +113,17 @@ func main() {
 	host_list_file = config["host_list_file"]
 	watch_root := config["etcd_watch_root_url"]
 
+	s := config["file_rewrite_interval"]
+	if s != "" {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("invalid file rewrite val in config: ", err))
+		}
+
+		if i != 0 {
+			fileRewriteInterval = i
+		}
+	}
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
 	cfg := client.Config{
