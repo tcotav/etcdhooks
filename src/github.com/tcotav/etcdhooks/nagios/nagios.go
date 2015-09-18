@@ -26,7 +26,7 @@ var GroupDef = `define hostgroup {
 
 `
 
-const ltagsrc = "etcdnagios"
+const ltagsrc = "etcdnag"
 
 // TODO: convert this to params
 var nagiosCheckCmd = "/usr/sbin/nagios3"
