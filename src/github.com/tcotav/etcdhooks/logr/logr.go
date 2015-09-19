@@ -32,7 +32,11 @@ func SetConfig(path string) {
 }
 
 func init() {
-	logcfg := config.ParseConfig(configFile)
+	logcfg, err := config.ParseConfig(configFile)
+	if err != nil {
+		log.Printf("%s logging config not found")
+		return
+	}
 
 	// do we want to dump stack traces?
 	s, _ := logcfg["stacktrace"]

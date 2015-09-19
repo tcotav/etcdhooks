@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"log"
 )
 
 // think we want to dump a lot of this into a config
@@ -107,7 +108,10 @@ func main() {
 		logr.SetConfig(logConfigPath)
 	}
 
-	config := config.ParseConfig(configFile)
+	config, err := config.ParseConfig(configFile)
+	if err != nil {
+		log.Fatal("couldn't open config file %s", configFile, err)
+	}
 	nagios_host_file = config["nagios_host_file"]
 	nagios_group_file = config["nagios_groups_file"]
 	host_list_file = config["host_list_file"]

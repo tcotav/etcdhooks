@@ -6,23 +6,28 @@ Also includes a simple webservice that allows you to dump the contents of etcd h
 
 The basic hostmap is of the format:
 
-    <hostname>:<rotation status of host -- in or out>
-    site-web-200:1     # is in
-    site-web-200:0     # is out
+    <hostname>:<random state string -- could be anything>
+    site-web-200:hbout       # is marked as out of rotation
+    site-web-200:created     # newly created VM
 
-### Get the go-etcd package
+### Get required go packages
+    go get github.com/coreos/etcd/client
+    go get github.com/Sirupsen/logrus
 
-    go get github.com/coreos/go-etcd/etcd
-
-### Dev Environment
+### Environment
 
 Run the provided script against any Ubuntu VPS.  Assumes non-root user.
 
     init_host.sh
 
-Then once etcd is running, you can throw some fake data in:
-  
-    init_etcd.sh
+This will 
+  - install go in /usr/local/go
+  - installs etcd in /opt/etcd
+  - creates ~/go for you
+  - set up your GOROOT and GOPATH properly
+  - stick those vars into your ~/.bashrc -- change this if you use some other shell
+  - install requied golang packages from github
+  - builds the binary etcdhooks for you and moves it to /opt/etcd
 
 ### nagios 
 

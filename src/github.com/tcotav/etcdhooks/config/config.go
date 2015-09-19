@@ -11,10 +11,11 @@ const ltagsrc = "etcconf"
 
 // ParseConfig parse a simple K=V pair based config file and return
 // a map equivalent.
-func ParseConfig(fileName string) map[string]string {
+func ParseConfig(fileName string) (map[string]string, error)  {
 	file, err := os.Open(fileName)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return nil, err
 	}
 	defer file.Close()
 
@@ -38,10 +39,13 @@ func ParseConfig(fileName string) map[string]string {
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
 	}
-	return config
+	return config, nil
 }
 
 func main() {
-	config := ParseConfig("daemon.cfg")
+	config, err := ParseConfig("daemon.cfg")
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Printf("%v", config)
 }

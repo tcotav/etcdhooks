@@ -19,11 +19,6 @@ func main() {
 		log.Fatal(err)
 	}
 	kapi := client.NewKeysAPI(c)
-	/*resp, err := kapi.Set(context.Background(), "foo", "bar", nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("%v", resp)*/
 	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
 	w := kapi.Watcher("/site", &watcherOpts)
 	for {

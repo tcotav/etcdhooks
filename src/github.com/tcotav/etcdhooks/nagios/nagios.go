@@ -62,17 +62,20 @@ func execCmd(cmdName string, cmdArgs []string) error {
 func RestartNagios() {
 	if _, err := execCmdOutput(nagiosCheckCmd, nagiosCheckArgs); err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, "check nagios config failed")
+		return
 	}
 	logr.LogLine(logr.Linfo, ltagsrc, "check nagios succeeded")
 
 	pid, err := execCmdOutput(nagiosPIDCmd, nagiosPIDArgs)
 	if err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, "get nagios PID failed")
+		return
 	}
 	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("got nagios pid: %s", pid))
 	useArgs := append(nagiosHUPArgs, pid)
 	if _, err := execCmdOutput(nagiosHUPCmd, useArgs); err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, "HUP nagios failed")
+		return
 	}
 	logr.LogLine(logr.Linfo, ltagsrc, "nagios restarted")
 }
