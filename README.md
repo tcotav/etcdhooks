@@ -38,7 +38,7 @@ For nagios, you should be running it using `conf.d` to be able to just dump in a
 tbd -- need to figure out some best practice way to HUP nagios.  maybe it is to just shell out and do a `service nagios3 restart`.
 
 
-### Configurationa
+### Configuration
 
 Daemon configuration is as follows:
 
