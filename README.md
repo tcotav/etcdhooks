@@ -1,4 +1,4 @@
-# etcdhook -- Go + Nagios + Etcd + Other Configs
+# etcdhook -- Go + Etcd -> Configs
 
 Service that watches `etcd` for changes and then updates nagios and custom config files reflecting those changes.
 
