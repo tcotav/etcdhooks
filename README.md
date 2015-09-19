@@ -40,21 +40,44 @@ tbd -- need to figure out some best practice way to HUP nagios.  maybe it is to 
 
 ### Configurationa
 
-Basic configuration is as follows:
+Daemon configuration is as follows:
 
-    # this is a comment
-    nagios_host_file=/tmp/host.cfg
-    nagios_groups_file=/tmp/groups.cfg
-    host_list_file=/tmp/hostlist.cfg
+    i# this is a comment
+    nagios_host_file=/etc/nagios3/conf.d/flex-hosts.cfg
+    nagios_groups_file=/etc/nagios3/conf.d/flex-groups.cfg
+    #host_list_file=/tmp/hostlist.cfg
 
-    # the etcd section of the configuration
+    # the etcd section of the configuration -- use comma separated values
     etcd_server_list=http://127.0.0.1:4001
 
+    # binds to all NICs currently.  Simple web listener
     web_listen_port=3000
 
-    base_etcd_url=/site/
+    # url that data is written to in etcd
+    etcd_watch_root_url=/site/
 
-base_etcd_url assumes a three part naming scheme that correlates to a three stage url.  For example site-db-800 would be /site/db/800 and would be a walkdown through <team>/<host type>/<specific hostid>.
+    # how long to queue file rewrite actions before firing them off - in seconds
+    file_rewrite_interval=15
+
+    # NYI
+    # csv list of files to rewrite
+    # currently support nagios,host
+    regen_files=nagios
+
+`base_etcd_url` assumes a three part naming scheme that correlates to a three stage url.  For example site-db-800 would be /site/db/800 and would be a walkdown through <team>/<host type>/<specific hostid>.
+
+`regen_files` tells the daemon which of the options, currently nagios and hostfile, you want it to do.  Leave blank for none.  (In progress)
+
+
+
+The log configuration is as follows -- mostly NYI:
+
+    #outputtype=file
+    #outputtarget=/tmp/etcdhooks.log
+    #loglevel=info
+    stacktrace=true
+
+Most of the code isn't instrumented to use stacktrace yet so its kind of a waste of a good config file.  We also just output to `os.Stdout` at the moment.
 
 ### Webservice
 
