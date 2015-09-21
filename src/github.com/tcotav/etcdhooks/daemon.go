@@ -15,11 +15,12 @@ import (
 	"github.com/tcotav/etcdhooks/logr"
 	"github.com/tcotav/etcdhooks/nagios"
 	"github.com/tcotav/etcdhooks/web"
+	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
-	"log"
 )
 
 // think we want to dump a lot of this into a config
@@ -37,11 +38,32 @@ func updateHost(k string, v string) {
 	go etcdWatcher.UpdateMap(k, v)
 	// regenerate these files ONLY if it is a new host
 	if !containsHost {
+		go fixHostKey(k)
 		regenHosts()
 	}
 }
 
 const ltagsrc = "etcmain"
+
+func execCmdOutput(cmdName string, cmdArgs []string) (string, error) {
+	cmdOut, err := exec.Command(cmdName, cmdArgs...).Output()
+	if err != nil {
+		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("cmd.exec:%s -- %s", cmdName, err))
+		return "", err
+	}
+	return strings.TrimSpace(string(cmdOut)), nil
+}
+
+// TODO -- make this configurable
+const sshkey_clean_path = "/opt/site-scripts/key_clean.sh"
+const sshkey_clean_user = "nagios"
+
+func fixHostKey(hostName string) {
+	_, err := execCmdOutput(sshkey_clean_path, []string{sshkey_clean_user, hostName})
+	if err != nil {
+		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("key_clean for host %s failed", hostName))
+	}
+}
 
 func writeHostMap(hostMap map[string]string) {
 	f, err := os.Create(host_list_file)
