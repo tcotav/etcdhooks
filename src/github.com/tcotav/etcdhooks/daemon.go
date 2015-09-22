@@ -45,26 +45,18 @@ func updateHost(k string, v string) {
 
 const ltagsrc = "etcmain"
 
-func execCmdOutput(cmdName string, cmdArgs []string) (string, error) {
-	cmdOut, err := exec.Command(cmdName, cmdArgs...).Output()
-	if err != nil {
-		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("cmd.exec:%s -- %s", cmdName, err))
-		return "", err
-	}
-	return strings.TrimSpace(string(cmdOut)), nil
-}
-
 // TODO -- make this configurable
 const sshkey_clean_path = "/opt/site-scripts/key_clean.sh"
 const sshkey_clean_user = "nagios"
 
 func fixHostKey(hostName string) {
-	_, err := execCmdOutput(sshkey_clean_path, []string{sshkey_clean_user, hostName})
+	_, err := exec.Command(sshkey_clean_path, sshkey_clean_user, hostName).Output()
 	if err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("key_clean for host %s failed", hostName))
 	}
 }
 
+// dump hostmap out to a file
 func writeHostMap(hostMap map[string]string) {
 	f, err := os.Create(host_list_file)
 	if err != nil {
