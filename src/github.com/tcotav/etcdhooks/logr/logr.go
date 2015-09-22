@@ -77,6 +77,8 @@ func LogLine(lvl string, tagsrc string, msg string) {
 	switch lvl {
 	case Linfo:
 		l.Info(msg)
+	case Lerror:
+		l.Error(msg)
 	case Lfatal:
 		l.Fatal(msg)
 		os.Exit(3)

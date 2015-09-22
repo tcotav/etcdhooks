@@ -11,6 +11,7 @@ import (
 	"github.com/coreos/etcd/client"
 	"github.com/tcotav/etcdhooks/logr"
 	"strings"
+  "os"
 )
 
 var hostMap map[string]string
@@ -28,7 +29,8 @@ const ltagsrc = "etcwatc"
 func ClientGet(kapi client.KeysAPI, url string) *client.Response {
 	resp, err := kapi.Get(context.Background(), url, &clientGetOpts)
 	if err != nil {
-		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
+		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
+    os.Exit(2)
 	}
 	return resp
 }
