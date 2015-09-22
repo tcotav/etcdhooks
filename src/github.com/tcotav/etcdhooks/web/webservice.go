@@ -10,8 +10,18 @@ import (
 
 const ltagsrc = "etcdweb"
 
-func dump(w http.ResponseWriter, r *http.Request) {
-	js, err := json.Marshal(etcdWatcher.Map())
+var serviceMap = map[string]string{
+	"/loadHosts": "Expects json dict in form of hostname:state",
+	"/dumpHosts": "Returns json dict in form of hostname:state",
+}
+
+type HostState struct {
+	Name  string
+	State string
+}
+
+func services(w http.ResponseWriter, r *http.Request) {
+	js, err := json.Marshal(serviceMap)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -21,8 +31,52 @@ func dump(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
+func mapToJson(mmap map[string]string) ([]byte, error) {
+
+	mapList := []HostState{}
+	for k, v := range mmap {
+		mapList = append(mapList, HostState{k, v})
+	}
+
+	bData, err := json.Marshal(mapList)
+	if err != nil {
+		return nil, err
+	}
+	return bData, nil
+}
+
+func getAll(w http.ResponseWriter, r *http.Request) {
+	js, err := mapToJson(etcdWatcher.Map())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
+func load(w http.ResponseWriter, r *http.Request) {
+	// we want to take in a json  map
+	// and replace the internal data structure with
+	// that
+
+	// also, update etcd with the data?
+	/*
+		js, err := json.Marshal(etcdWatcher.Map())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(js)*/
+}
+
 func StartWebService(listenPort string) {
-	http.HandleFunc("/", dump)
+	http.HandleFunc("/getall", getAll)
+	//http.HandleFunc("/loadHosts", loadHosts)
+	http.HandleFunc("/", services)
 	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("Starting webservice on port: %s", listenPort))
 	http.ListenAndServe(fmt.Sprintf(":%s", listenPort), nil)
 }
