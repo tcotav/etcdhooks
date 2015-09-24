@@ -28,13 +28,17 @@ var GroupDef = `define hostgroup {
 
 const ltagsrc = "etcdnag"
 
+// convert to "pkill -f "d /etc/nagios3/nagios.cfg" --signal HUP
 // TODO: convert this to params
 var nagiosCheckCmd = "/usr/sbin/nagios3"
 var nagiosCheckArgs = []string{"-v", "/etc/nagios3/nagios.cfg"}
-var nagiosPIDCmd = "pgrep"
-var nagiosPIDArgs = []string{"nagios3"}
+var nagiosPkillCmd = "pkill"
+var nagiosPkillArgs = []string{"-HUP", "-f", "d /etc/nagios3/nagios.cfg"}
+
+/*var nagiosPIDCmd = "pgrep"
+var nagiosPIDArgs = []string{"-f", "-d /etc/nagios3/nagios.cfg"}
 var nagiosHUPCmd = "kill"
-var nagiosHUPArgs = []string{"-HUP"}
+var nagiosHUPArgs = []string{"-HUP"}*/
 
 func execCmdOutput(cmdName string, cmdArgs []string) (string, error) {
 	cmdOut, err := exec.Command(cmdName, cmdArgs...).Output()
@@ -60,23 +64,25 @@ func execCmd(cmdName string, cmdArgs []string) error {
 }
 
 func RestartNagios() {
+	// first confirm that we didn't blow the syntax
 	if _, err := execCmdOutput(nagiosCheckCmd, nagiosCheckArgs); err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, "check nagios config failed")
 		return
 	}
 	logr.LogLine(logr.Linfo, ltagsrc, "check nagios succeeded")
 
-	pid, err := execCmdOutput(nagiosPIDCmd, nagiosPIDArgs)
+	// then restart
+	pid, err := execCmdOutput(nagiosPkillCmd, nagiosPkillArgs)
 	if err != nil {
-		logr.LogLine(logr.Lerror, ltagsrc, "get nagios PID failed")
+		logr.LogLine(logr.Lerror, ltagsrc, "pkill HUP nagios failed")
 		return
 	}
-	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("got nagios pid: %s", pid))
+	/*logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("got nagios pid: %s", pid))
 	useArgs := append(nagiosHUPArgs, pid)
 	if _, err := execCmdOutput(nagiosHUPCmd, useArgs); err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, "HUP nagios failed")
 		return
-	}
+	}*/
 	logr.LogLine(logr.Linfo, ltagsrc, "nagios restarted")
 }
 

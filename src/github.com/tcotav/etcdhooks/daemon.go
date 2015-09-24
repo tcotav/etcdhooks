@@ -153,7 +153,7 @@ func main() {
 	c, err := client.New(cfg)
 	if err != nil {
 		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
-    os.Exit(2)
+		os.Exit(2)
 	}
 	kapi := client.NewKeysAPI(c)
 
