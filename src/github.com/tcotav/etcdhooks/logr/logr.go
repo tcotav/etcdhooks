@@ -1,10 +1,5 @@
 package logr
 
-/*
-Script that watched etcd and rewrites configuration files on change in etcd
-*/
-
-// http://blog.gopheracademy.com/advent-2013/day-06-service-discovery-with-etcd/
 import (
 	"fmt"
 	"github.com/Sirupsen/logrus"
@@ -31,6 +26,23 @@ func SetConfig(path string) {
 	log = logrus.New()
 }
 
+func setLogLevel(lvl string) {
+	switch lvl {
+	case Linfo:
+		logrus.SetLevel(logrus.InfoLevel)
+	case Lerror:
+		logrus.SetLevel(logrus.ErrorLevel)
+	case Lfatal:
+		logrus.SetLevel(logrus.FatalLevel)
+	case Lwarn:
+		logrus.SetLevel(logrus.WarnLevel)
+	case Ldebug:
+		logrus.SetLevel(logrus.DebugLevel)
+	case Lpanic:
+		logrus.SetLevel(logrus.PanicLevel)
+	}
+}
+
 func init() {
 	logcfg, err := config.ParseConfig(configFile)
 	if err != nil {
@@ -46,31 +58,36 @@ func init() {
 	}
 
 	// put overrides here
+	logLevel := logcfg["loglevel"]
+	if logLevel != "" {
+		setLogLevel(logLevel)
+	}
 	return
 }
 
-func LogFatal(tagsrc string, functionSrc string, msg string) {
-	l := log.WithFields(logrus.Fields{
-		"src":  tagsrc,
-		"func": functionSrc,
-	})
-
-	l.Fatal(msg)
-
+func DumpStackTrace(lvl string, tagsrc string, msg string) {
 	if stackTrace {
-		lstack := log.WithFields(logrus.Fields{
-			"src":  tagsrc,
-			"func": functionSrc,
-			"data": "stack",
-		})
 		//stack trace
 		var stack [4096]byte
 		runtime.Stack(stack[:], false)
-		lstack.Fatal(fmt.Sprintf("%s", stack[:]))
+		logLine(lvl, tagsrc, fmt.Sprintf("%s", stack[:]))
 	}
 }
 
 func LogLine(lvl string, tagsrc string, msg string) {
+	logLine(lvl, tagsrc, msg)
+	// additional actions
+	switch lvl {
+	case Lerror:
+		DumpStackTrace(lvl, tagsrc, msg)
+	case Lfatal:
+		DumpStackTrace(lvl, tagsrc, msg)
+		os.Exit(3)
+	}
+}
+
+// logLine only handles the logging to target
+func logLine(lvl string, tagsrc string, msg string) {
 	l := log.WithFields(logrus.Fields{
 		"src": tagsrc,
 	})
@@ -81,14 +98,12 @@ func LogLine(lvl string, tagsrc string, msg string) {
 		l.Error(msg)
 	case Lfatal:
 		l.Fatal(msg)
-		os.Exit(3)
 	case Lwarn:
 		l.Warn(msg)
 	case Ldebug:
 		l.Debug(msg)
 	case Lpanic:
 		l.Panic(msg)
-		os.Exit(4)
 	default:
 		l.Info(msg)
 	}
