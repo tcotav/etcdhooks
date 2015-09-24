@@ -50,6 +50,8 @@ const sshkey_clean_path = "/opt/site-scripts/key_clean.sh"
 const sshkey_clean_user = "nagios"
 
 func fixHostKey(hostName string) {
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("fixhostkey for host: %s", hostName))
+	hostName = strings.Replace(hostName[1:], "/", "-", -1)
 	_, err := exec.Command(sshkey_clean_path, sshkey_clean_user, hostName).Output()
 	if err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("key_clean for host %s failed", hostName))
