@@ -58,6 +58,9 @@ func fixHostKey(hostName string) {
 
 // dump hostmap out to a file
 func writeHostMap(hostMap map[string]string) {
+	if host_list_file == "" {
+		return
+	}
 	f, err := os.Create(host_list_file)
 	if err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
@@ -73,22 +76,24 @@ var limiterOn = false
 
 var fileRewriteInterval = 15
 
-var lastFileWrite = time.Now().Add(time.Second * 1000 * -1) // initialize to some point in the past
+var lastFileWrite = time.Now()
 
 // regenHostFiles utility function that calls regen methods for files/persistence that contain only
 // host data.  We pass along up/down and in/out service info too -- that should be handled with a different
 // method.  Currently limited so that we don't write More than fileRewriteInterval seconds.
 func regenHosts() {
 	if limiterOn { // we're already waiting on a file rewrite
+		logr.LogLine(logr.Linfo, ltagsrc, "limiter already on")
 		return
 	}
 
 	// do some date math here -- have we waited long enough to write our file?
-	if time.Now().Before(lastFileWrite.Add(time.Duration(fileRewriteInterval))) {
+	// now < lastfilewrite + fileRewriteInterval
+	if time.Now().Before(lastFileWrite.Add(time.Duration(fileRewriteInterval) * time.Second)) {
 		logr.LogLine(logr.Linfo, ltagsrc, "limiter kicked in")
 		limiterOn = true
 		// these statements cause us to wait fileRewriteInterval seconds before continuing
-		limiter := time.Tick(time.Duration(fileRewriteInterval))
+		limiter := time.Tick(time.Duration(fileRewriteInterval) * time.Second)
 		<-limiter
 	}
 
@@ -100,8 +105,8 @@ func regenHosts() {
 	// do the work
 	etcdWatcher.BuildMap()
 	hostMap := etcdWatcher.Map()
-	go nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
-	go writeHostMap(hostMap)
+	nagios.GenerateFiles(hostMap, nagios_host_file, nagios_group_file)
+	writeHostMap(hostMap)
 }
 
 func removeHost(k string) {
@@ -142,6 +147,7 @@ func main() {
 			fileRewriteInterval = i
 		}
 	}
+	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("file rewrite interval set to: %d", fileRewriteInterval))
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
 	cfg := client.Config{

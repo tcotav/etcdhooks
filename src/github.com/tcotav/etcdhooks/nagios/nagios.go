@@ -72,7 +72,7 @@ func RestartNagios() {
 	logr.LogLine(logr.Linfo, ltagsrc, "check nagios succeeded")
 
 	// then restart
-	pid, err := execCmdOutput(nagiosPkillCmd, nagiosPkillArgs)
+	_, err := execCmdOutput(nagiosPkillCmd, nagiosPkillArgs)
 	if err != nil {
 		logr.LogLine(logr.Lerror, ltagsrc, "pkill HUP nagios failed")
 		return
