@@ -7,11 +7,9 @@ import (
 	"strings"
 )
 
-const ltagsrc = "etcconf"
-
 // ParseConfig parse a simple K=V pair based config file and return
 // a map equivalent.
-func ParseConfig(fileName string) (map[string]string, error)  {
+func ParseConfig(fileName string) (map[string]string, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Print(err)
