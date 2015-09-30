@@ -15,7 +15,7 @@ We flex up adding two new pods (web+papi+extapi) - 800 and 801
 
 On site-monitor-001, we run the command:
 
-  /opt/etcd/add-hosts.sh 800 801
+    /opt/etcd/add-hosts.sh 800 801
 
 This will handle a range of hosts and you give it the start and end point to process.  If you look at the source of this script, it's a simple loop that does a `curl` to etcd.  Pretty simple stuff.
 
