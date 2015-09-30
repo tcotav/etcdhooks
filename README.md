@@ -20,6 +20,7 @@ On site-monitor-001, we run the command:
 This will handle a range of hosts and you give it the start and end point to process.  If you look at the source of this script, it's a simple loop that does a `curl` to etcd.  Pretty simple stuff.
 
 What happens when this occurs is that `etcd` fires off an event that our service watches for.  Magic elves then do the following:
+
   - keep an internal map of the k,v pair where key is hostname and value is the state of the host
   - rewrite nagios files in conf.d -- `flex-hosts.cfg` and `flex-groups.cfg`
   - reset the ssh keys of the nagios user against the delta'd host
