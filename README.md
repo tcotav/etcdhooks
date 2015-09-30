@@ -1,86 +1,76 @@
-# etcdhook -- Go + Etcd -> Configs
+## etcdhooks
 
-Service that watches `etcd` for changes and then updates nagios and custom config files reflecting those changes.
+Simple service that watches etcd for changes and then reflects those changes on the targeted services.  We are currently only targeting `nagios` for update.
 
-Also includes a simple webservice that allows you to dump the contents of etcd host states and get back a json blob.
+Additional (possible) hooks are:
+  - rcmd/rsalt tools
+  - featuretoggle tools
+  - zpj
 
-The basic hostmap is of the format:
+We don't have the hooks into `infraops` VM build tools yet so adding a host to etcd is still a manual script (done via script -- more below).
 
-    <hostname>:<random state string -- could be anything>
-    site-web-200:hbout       # is marked as out of rotation
-    site-web-200:created     # newly created VM
+### Example scenario -- add two hosts, nagios configuration only
 
-### Get required go packages
-    go get github.com/coreos/etcd/client
-    go get github.com/Sirupsen/logrus
+We flex up adding two new pods (web+papi+extapi) - 800 and 801
 
-### Environment
+On site-monitor-001, we run the command:
 
-Run the provided script against any Ubuntu VPS.  Assumes non-root user.
+  /opt/etcd/add-hosts.sh 800 801
 
-    init_host.sh
+This will handle a range of hosts and you give it the start and end point to process.  If you look at the source of this script, it's a simple loop that does a `curl` to etcd.  Pretty simple stuff.
 
-This will 
-  - install go in /usr/local/go
-  - installs etcd in /opt/etcd
-  - creates ~/go for you
-  - set up your GOROOT and GOPATH properly
-  - stick those vars into your ~/.bashrc -- change this if you use some other shell
-  - install requied golang packages from github
-  - builds the binary etcdhooks for you and moves it to /opt/etcd
-
-### nagios 
-
-For nagios, you should be running it using `conf.d` to be able to just dump in any ol file for configs.  This is default from the ubuntu packages.  The script as currently written will overwrite previous versions of the config file so it assumes this app manages those hosts + group file completely.  You best bet is to create some file for dynamic-only hosts and dynamic only groups and have that constantly recreated in the `conf.d` directory.
-
-### nagios restart
-
-tbd -- need to figure out some best practice way to HUP nagios.  maybe it is to just shell out and do a `service nagios3 restart`.
+What happens when this occurs is that `etcd` fires off an event that our service watches for.  Magic elves then do the following:
+  - keep an internal map of the k,v pair where key is hostname and value is the state of the host
+  - rewrite nagios files in conf.d -- `flex-hosts.cfg` and `flex-groups.cfg`
+  - reset the ssh keys of the nagios user against the delta'd host
+  - check config and then HUP the nagios daemon to pick up the configuration changes 
 
 
 ### Configuration
 
-Daemon configuration is as follows:
+`etcdhooks` is controlled by two configuration files in `/opt/etcd`.
 
-    i# this is a comment
-    nagios_host_file=/etc/nagios3/conf.d/flex-hosts.cfg
-    nagios_groups_file=/etc/nagios3/conf.d/flex-groups.cfg
-    #host_list_file=/tmp/hostlist.cfg
+#### daemon.cfg
 
-    # the etcd section of the configuration -- use comma separated values
-    etcd_server_list=http://127.0.0.1:4001
+Configures the main function of the service here including things like: etcd cluster info, nagios file location, some minor configs.
 
-    # binds to all NICs currently.  Simple web listener
-    web_listen_port=3000
+#### log.cfg
 
-    # url that data is written to in etcd
-    etcd_watch_root_url=/site/
-
-    # how long to queue file rewrite actions before firing them off - in seconds
-    file_rewrite_interval=15
-
-    # NYI
-    # csv list of files to rewrite
-    # currently support nagios,host
-    regen_files=nagios
-
-`base_etcd_url` assumes a three part naming scheme that correlates to a three stage url.  For example site-db-800 would be /site/db/800 and would be a walkdown through <team>/<host type>/<specific hostid>.
-
-`regen_files` tells the daemon which of the options, currently nagios and hostfile, you want it to do.  Leave blank for none.  (In progress)
+Control the logging.  All logging goes currently to stdout.  You can set the level of logging you want to write.  You can set whether we dump out stacktraces to the log.
 
 
+### User scripts
 
-The log configuration is as follows -- mostly NYI:
+We (arbitrarily) install into `/opt/etcd` a number of scripts that control the service and interact with etcd.
 
-    #outputtype=file
-    #outputtarget=/tmp/etcdhooks.log
-    #loglevel=info
-    stacktrace=true
+Etcd interactions: add remove hosts from etcd
 
-Most of the code isn't instrumented to use stacktrace yet so its kind of a waste of a good config file.  We also just output to `os.Stdout` at the moment.
+  - add-hosts.sh
+  - remove-hosts.sh  
 
-### Webservice
+Service Controls: start and stop the service
 
-Only have a crude initial placeholder for this.  If you hit the base `/` url at port `web_listen_port`, you'll get a json dump of the current contents of etcd from the root `base_etcd_url`.
+  - start-hooks.sh
+  - stop-hooks.sh
 
-We could easily add features to have a `force_reload` endpoint or anything else.  We'll see what makes sense once we try this sucker in production.
+Config files: 
+
+  - daemon.cfg  
+  - log.cfg  
+
+Binaries: 
+
+  - etcdctl - direct access tool to etcd
+  - etcdhooks  
+
+
+### Web End Point
+
+The idea for this is hooks to perform batch commands against the `etcd` cluster.  The only end point currently available is `/getall` which returns a json dump of all the hosts and their states.
+
+The first add to this would be a `/putall` so that you can reset the /site kv in the `etcd` cluster by pushing a json blob up to the service to then feed etcd.
+
+
+
+
+
