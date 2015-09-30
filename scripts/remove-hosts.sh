@@ -8,8 +8,8 @@ fi
 
 
 for hhost in web papi extapi; do
-
+#for hhost in extapi; do
   for ((i=$1; i<=$2; i++)); do
-    curl -L http://127.0.0.1:4001/v2/keys/site/$hhost/$i -XDELETE
+    curl -L http://site-etcd-500.iad.prod.zulily.com:2379/v2/keys/site/$hhost/$i -XDELETE
   done
 done
