@@ -11,8 +11,7 @@ import (
 const ltagsrc = "etcdweb"
 
 var serviceMap = map[string]string{
-	"/loadHosts": "Expects json dict in form of hostname:state",
-	"/dumpHosts": "Returns json dict in form of hostname:state",
+	"/getall": "Returns json dict in form of hostname:state",
 }
 
 type HostState struct {
