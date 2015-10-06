@@ -125,7 +125,7 @@ func GetEtcdKapi(serverList []string) (client.KeysAPI, error) {
 	}
 	c, err := client.New(cfg)
 	if err != nil {
-		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
+		logr.LogLine(logr.Lerror, ltagsrc, err.Error())
 		return nil, err
 	}
 	return client.NewKeysAPI(c), nil
@@ -168,9 +168,9 @@ func main() {
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
 	kapi, err := GetEtcdKapi(etcd_server_list)
-
 	if err != nil {
-		logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error watching etcd", err.Error()))
+		// we die on the inital because it assumes a user is there watching
+		logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error getting etcdKAPI", err.Error()))
 		os.Exit(2)
 	}
 	logr.LogLine(logr.Linfo, ltagsrc, "got client")
@@ -190,23 +190,23 @@ func main() {
 	for {
 		r, err := w.Next(context.Background())
 		if err != nil {
-			logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error watching etcd", err.Error()))
+			logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("Error watching etcd", err.Error()))
 			// has etcd gone away?
 			restartCount++
 			switch {
 			case restartCount < 10:
-				logr.LogLine(logr.Lfatal, ltagsrc, "Sleeping for 10 seconds then retrying")
+				logr.LogLine(logr.Lerror, ltagsrc, "Sleeping for 10 seconds then retrying")
 				time.Sleep(10 * time.Second)
 			case restartCount < 20:
 				time.Sleep(30 * time.Second)
-				logr.LogLine(logr.Lfatal, ltagsrc, "Sleeping for 30 seconds then retrying.")
+				logr.LogLine(logr.Lerror, ltagsrc, "Sleeping for 30 seconds then retrying.")
 			default:
 				time.Sleep(60 * time.Second * 5) // default sleep 5 minutes before retry
-				logr.LogLine(logr.Lfatal, ltagsrc, "Sleeping for 5 minutes then retrying.")
+				logr.LogLine(logr.Lerror, ltagsrc, "Sleeping for 5 minutes then retrying.")
 			}
 			kapi, err := GetEtcdKapi(etcd_server_list)
 			if err != nil {
-				logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error getting etcdKAPI", err.Error()))
+				logr.LogLine(logr.Lerror, ltagsrc, fmt.Sprintf("Error getting etcdKAPI", err.Error()))
 			}
 			w = kapi.Watcher(watch_root, &watcherOpts)
 			continue
