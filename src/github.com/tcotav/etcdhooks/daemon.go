@@ -116,6 +116,21 @@ func removeHost(k string) {
 	regenHosts()
 }
 
+func GetEtcdKapi(serverList []string) (client.KeysAPI, error) {
+	cfg := client.Config{
+		Endpoints: serverList,
+		Transport: client.DefaultTransport,
+		// set timeout per request to fail fast when the target endpoint is unavailable
+		HeaderTimeoutPerRequest: time.Second,
+	}
+	c, err := client.New(cfg)
+	if err != nil {
+		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
+		return nil, err
+	}
+	return client.NewKeysAPI(c), nil
+}
+
 func main() {
 
 	// handle command line args
@@ -152,19 +167,12 @@ func main() {
 	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("file rewrite interval set to: %d", fileRewriteInterval))
 	// expect this to be csv or single entry
 	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
-	cfg := client.Config{
-		Endpoints: etcd_server_list,
-		Transport: client.DefaultTransport,
-		// set timeout per request to fail fast when the target endpoint is unavailable
-		HeaderTimeoutPerRequest: time.Second,
-	}
-	c, err := client.New(cfg)
+	kapi, err := GetEtcdKapi(etcd_server_list)
+
 	if err != nil {
-		logr.LogLine(logr.Lfatal, ltagsrc, err.Error())
+		logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error watching etcd", err.Error()))
 		os.Exit(2)
 	}
-	kapi := client.NewKeysAPI(c)
-
 	logr.LogLine(logr.Linfo, ltagsrc, "got client")
 	etcdWatcher.InitDataMap(kapi, watch_root)
 	logr.LogLine(logr.Linfo, ltagsrc, "Dumping map contents for verification")
@@ -178,10 +186,30 @@ func main() {
 	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
 	w := kapi.Watcher(watch_root, &watcherOpts)
 	logr.LogLine(logr.Linfo, ltagsrc, "Waiting for an update...")
+	restartCount := 0
 	for {
 		r, err := w.Next(context.Background())
 		if err != nil {
 			logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error watching etcd", err.Error()))
+			// has etcd gone away?
+			restartCount++
+			switch {
+			case restartCount < 10:
+				logr.LogLine(logr.Lfatal, ltagsrc, "Sleeping for 10 seconds then retrying")
+				time.Sleep(10 * time.Second)
+			case restartCount < 20:
+				time.Sleep(30 * time.Second)
+				logr.LogLine(logr.Lfatal, ltagsrc, "Sleeping for 30 seconds then retrying.")
+			default:
+				time.Sleep(60 * time.Second * 5) // default sleep 5 minutes before retry
+				logr.LogLine(logr.Lfatal, ltagsrc, "Sleeping for 5 minutes then retrying.")
+			}
+			kapi, err := GetEtcdKapi(etcd_server_list)
+			if err != nil {
+				logr.LogLine(logr.Lfatal, ltagsrc, fmt.Sprintf("Error getting etcdKAPI", err.Error()))
+			}
+			w = kapi.Watcher(watch_root, &watcherOpts)
+			continue
 		}
 		// do something with it here
 		action := r.Action
