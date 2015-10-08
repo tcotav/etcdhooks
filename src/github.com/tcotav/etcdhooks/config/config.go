@@ -28,8 +28,9 @@ func ParseConfig(fileName string) (map[string]string, error) {
 			// split on = sign
 			slist := strings.Split(s, "=")
 			// set map[k] = v
-			if len(slist) == 2 {
-				config[slist[0]] = slist[1]
+			if len(slist) >= 2 {
+				// bit of a hack in case equals sign appears as part of the value
+				config[slist[0]] = strings.Join(slist[1:], "=")
 			}
 		}
 	}
