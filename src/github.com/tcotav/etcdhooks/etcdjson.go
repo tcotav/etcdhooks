@@ -1,4 +1,4 @@
-package main
+package etcdhooks
 
 import (
 	"encoding/json"
