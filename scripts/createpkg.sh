@@ -13,6 +13,12 @@ mkdir -p $GOPATH/bin
 # build the binary
 go install github.com/tcotav/$package
 
+# test exit code
+if [ $? -ne 0 ]
+then
+  echo "go install of package $package failed"
+  exit 1
+fi
 
 # make deploy dir -- might exist
 mkdir -p $GOPATH/deploy/$tgtdir
