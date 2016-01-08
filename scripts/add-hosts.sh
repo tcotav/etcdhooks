@@ -1,14 +1,15 @@
 #!/bin/bash
 
-if [ $# -ne 2 ]; then
-  echo "usage: script <start host ordinal> <end host ordinal>"
-  echo "./script 500 502" 
+if [ $# -ne 3 ]; then
+  echo "usage: script <host-type> <start host ordinal> <end host ordinal>"
+  echo "./script web 500 502" 
   exit 1
 fi
 
-for hhost in web papi extapi; do
-  for ((i=$1; i<=$2; i++)); do
-  curl -L http://site-etcd-500:2379/v2/keys/site/$hhost/$i -XPUT -d value=hbout
-done
-done
+HOSTTYPE=$1
+START_HOSTNUM=$2
+LAST_HOSTNUM=$3
 
+for ((i=$START_HOSTNUM; i<=$LAST_HOSTNUM; i++)); do
+  curl -L http://site-etcd-500:2379/v2/keys/site/$HOSTTYPE/$i -XPUT -d value=hbout 
+done 
