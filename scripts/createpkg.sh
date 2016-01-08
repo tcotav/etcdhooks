@@ -30,3 +30,4 @@ cd $GOPATH/deploy/
 tar -czvf $tgtdir.tar.gz $tgtdir
 rm -Rf $tgtdir
 
+shasum -a256 $tgtdir.tar.gz $tgtdir.tar.gz.sha  
