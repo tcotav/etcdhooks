@@ -37,7 +37,7 @@ cd $GOPATH/deploy/
 tar -czvf $tgtdir.tar.gz $tgtdir
 rm -Rf $tgtdir
 
-shasum -a256 $tgtdir.tar.gz $tgtdir.tar.gz.sha  
+shasum -a256 $tgtdir.tar.gz > $tgtdir.tar.gz.sha  
 
 # now push to a web-accessible location to use with automation
 mv $tgtdir.tar.gz* $REPO
