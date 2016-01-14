@@ -6,13 +6,19 @@ now=`date +%m%d%Y%H%M`
 REPO=/var/www/html/repo
 tgtdir="$package-$now"
 
-cd $GOPATH
+basedir=$work_dir/..
 
-# might fail... so it goes
-mkdir -p $GOPATH/bin
+# confirm we're in the right directory
+if [ ! -d "$basedir/vendor" ]
+then
+  echo "something is wrong -- bad basedir: $basedir"
+  exit 1
+fi
+
+cd $basedir
 
 # build the binary
-go install github.com/tcotav/$package
+gb build all
 
 # test exit code
 if [ $? -ne 0 ]
@@ -22,31 +28,39 @@ then
 fi
 
 # make deploy dir -- might exist
-mkdir -p $GOPATH/deploy/$tgtdir
+mkdir -p $basedir/deploy/$tgtdir
 
 # copy over the binaries
-cp $GOPATH/bin/etcdhooks $GOPATH/deploy/$tgtdir
+cp $basedir/bin/etcdhooks $basedir/deploy/$tgtdir/etcdhooks
+
+# test exit code
+if [ $? -ne 0 ]
+then
+  echo "failed to find binaries"
+  exit 1
+fi
 
 # then get the scripts we want into the dir
 cd $work_dir
-cp *.sh  $GOPATH/deploy/$tgtdir
+cp *.sh  $basedir/deploy/$tgtdir
 
 # now make archive
-cd $GOPATH/deploy/
+cd $basedir/deploy/
 
 tar -czvf $tgtdir.tar.gz $tgtdir
 rm -Rf $tgtdir
 
-shasum -a256 $tgtdir.tar.gz > $tgtdir.tar.gz.sha  
+shasum -a256 $tgtdir.tar.gz > $tgtdir.tar.gz.sha
 
-# now push to a web-accessible location to use with automation
-mv $tgtdir.tar.gz* $REPO
+sudo mkdir -p $REPO
+
+sudo mv $tgtdir.tar.gz* $REPO
 
 # remove symlink
-rm $REPO/$package-current.tar.gz*
+sudo rm $REPO/$package-current.tar.gz*
 
 # create new symlinks
-ln -s $REPO/$tgtdir.tar.gz $REPO/$package-current.tar.gz
-ln -s $REPO/$tgtdir.tar.gz.sha $REPO/$package-current.tar.gz.sha
+sudo ln -s $REPO/$tgtdir.tar.gz $REPO/$package-current.tar.gz
+sudo ln -s $REPO/$tgtdir.tar.gz.sha $REPO/$package-current.tar.gz.sha
 
 # run salt or whatever to pick it up -- report error state back to gitlab
