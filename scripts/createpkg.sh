@@ -54,6 +54,13 @@ shasum -a256 $tgtdir.tar.gz > $tgtdir.tar.gz.sha
 
 sudo mkdir -p $REPO
 
+# if we can't make repo, then exit
+if [ $? -ne 0 ]
+then
+  echo "Could not create repo: $REPO"
+  exit 1
+fi
+
 sudo mv $tgtdir.tar.gz* $REPO
 
 # remove symlink
