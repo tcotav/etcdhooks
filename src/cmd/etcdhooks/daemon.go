@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context"
 	"github.com/coreos/etcd/client"
-	"github.com/tcotav/etcdhooks/config"
+	"github.com/spf13/viper"
 	"github.com/tcotav/etcdhooks/etcd"
 	"github.com/tcotav/etcdhooks/logr"
 	"github.com/tcotav/etcdhooks/nagios"
@@ -134,26 +134,26 @@ func GetEtcdKapi(serverList []string) (client.KeysAPI, error) {
 func main() {
 
 	// handle command line args
-	var configFile string
-	flag.StringVar(&configFile, "cfg", "daemon.cfg", "full path to daemon config")
-	var logConfigPath string
-	flag.StringVar(&logConfigPath, "logcfg", "none", "full path to log config")
+
+	configName := flag.String("c", "etcdhooks.cfg", "Config file name")
+	configPath := flag.String("p", "./", "Custom config file search path")
 	flag.Parse()
 
-	if logConfigPath != "none" {
-		logr.SetConfig(logConfigPath)
-	}
-
-	config, err := config.ParseConfig(configFile)
+	config := viper.New()
+	viper.AddConfigPath("/etc/etcdhooks/") // path to look for the config file in
+	config.AddConfigPath(*configPath)
+	config.SetConfigName(*configName)
+	err := viper.ReadInConfig()
 	if err != nil {
-		log.Fatal("couldn't open config file %s", configFile, err)
+		log.Fatal("Couldn't open config file %s", configName, err)
+		log.Fatal("Config file search path: /etc/etcdhooks, %s", configPath)
 	}
-	nagios_host_file = config["nagios_host_file"]
-	nagios_group_file = config["nagios_groups_file"]
-	host_list_file = config["host_list_file"]
-	watch_root := config["etcd_watch_root_url"]
+	nagios_host_file = viper.GetString("nagios_host_file")
+	nagios_group_file = viper.GetString("nagios_groups_file")
+	host_list_file = viper.GetString("host_list_file")
+	watch_root := viper.GetString("etcd_watch_root_url")
 
-	s := config["file_rewrite_interval"]
+	s := viper.GetString("file_rewrite_interval")
 	if s != "" {
 		i, err := strconv.Atoi(s)
 		if err != nil {
@@ -166,7 +166,7 @@ func main() {
 	}
 	logr.LogLine(logr.Linfo, ltagsrc, fmt.Sprintf("file rewrite interval set to: %d", fileRewriteInterval))
 	// expect this to be csv or single entry
-	etcd_server_list := strings.Split(config["etcd_server_list"], ",")
+	etcd_server_list := strings.Split(viper.GetString("etcd_server_list"), ",")
 	kapi, err := GetEtcdKapi(etcd_server_list)
 	if err != nil {
 		// we die on the inital because it assumes a user is there watching
@@ -182,7 +182,7 @@ func main() {
 	//
 	// spin up the web server
 	//
-	go webservice.StartWebService(config["web_listen_port"])
+	go webservice.StartWebService(viper.GetString("web_listen_port"))
 	watcherOpts := client.WatcherOptions{AfterIndex: 0, Recursive: true}
 	w := kapi.Watcher(watch_root, &watcherOpts)
 	logr.LogLine(logr.Linfo, ltagsrc, "Waiting for an update...")
