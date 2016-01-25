@@ -135,7 +135,7 @@ func main() {
 
 	// handle command line args
 
-	configName := flag.String("c", "etcdhooks.cfg", "Config file name")
+	configName := flag.String("c", "etcdhooks", "Config file name")
 	configPath := flag.String("p", "./", "Custom config file search path")
 	flag.Parse()
 
