@@ -44,6 +44,10 @@ fi
 cd $work_dir
 cp *.sh  $basedir/deploy/$tgtdir
 
+# lastly the configs we want
+cd $basedir
+cp etc/*.cfg $basedir/deploy/$tgtdir
+
 # now make archive
 cd $basedir/deploy/
 

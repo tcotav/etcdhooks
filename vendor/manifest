@@ -10,7 +10,7 @@
 		{
 			"importpath": "github.com/Sirupsen/logrus",
 			"repository": "https://github.com/Sirupsen/logrus",
-			"revision": "446d1c146faa8ed3f4218f056fcd165f6bcfda81",
+			"revision": "f7f79f729e0fbe2fcc061db48a9ba0263f588252",
 			"branch": "master"
 		},
 		{
@@ -22,35 +22,35 @@
 		{
 			"importpath": "github.com/coreos/etcd/Godeps/_workspace/src/github.com/ugorji/go/codec",
 			"repository": "https://github.com/coreos/etcd",
-			"revision": "a8a786598d78fcc9598ace6d4014283736d8d3ad",
+			"revision": "8199147cf859882f625523446c28ae2e53b2432f",
 			"branch": "master",
 			"path": "/Godeps/_workspace/src/github.com/ugorji/go/codec"
 		},
 		{
 			"importpath": "github.com/coreos/etcd/Godeps/_workspace/src/golang.org/x/net/context",
 			"repository": "https://github.com/coreos/etcd",
-			"revision": "a8a786598d78fcc9598ace6d4014283736d8d3ad",
+			"revision": "8199147cf859882f625523446c28ae2e53b2432f",
 			"branch": "master",
 			"path": "/Godeps/_workspace/src/golang.org/x/net/context"
 		},
 		{
 			"importpath": "github.com/coreos/etcd/client",
 			"repository": "https://github.com/coreos/etcd",
-			"revision": "a8a786598d78fcc9598ace6d4014283736d8d3ad",
+			"revision": "8199147cf859882f625523446c28ae2e53b2432f",
 			"branch": "master",
 			"path": "/client"
 		},
 		{
 			"importpath": "github.com/coreos/etcd/pkg/pathutil",
 			"repository": "https://github.com/coreos/etcd",
-			"revision": "a8a786598d78fcc9598ace6d4014283736d8d3ad",
+			"revision": "8199147cf859882f625523446c28ae2e53b2432f",
 			"branch": "master",
 			"path": "/pkg/pathutil"
 		},
 		{
 			"importpath": "github.com/coreos/etcd/pkg/types",
 			"repository": "https://github.com/coreos/etcd",
-			"revision": "a8a786598d78fcc9598ace6d4014283736d8d3ad",
+			"revision": "8199147cf859882f625523446c28ae2e53b2432f",
 			"branch": "master",
 			"path": "/pkg/types"
 		},
